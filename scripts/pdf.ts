@@ -1,44 +1,47 @@
-import { readFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
-import { validateDocument } from '../src/document.ts'
+import { getWorkPaths, readApprovedDraft } from './approval.ts'
+import type { SourceDocument } from '../src/document.ts'
+import { renderDocument } from '../src/preview.ts'
 
-const workName = process.argv[2]
-if (!workName || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(workName)) {
-    throw new Error('Использование: npm run pdf -- "ИМЯ_РАБОТЫ"')
+export async function createPdf(workName: string): Promise<string> {
+    const paths = getWorkPaths(workName)
+    const source = JSON.parse(readFileSync('docs/agents-tools/source.json', 'utf8')) as SourceDocument
+    const document = readApprovedDraft(paths.draftPath, paths.approvalPath, source)
+    writeFileSync(paths.previewPath, renderDocument(document, '../../../public/fonts/InterVariable.woff2'))
+
+    const browser = await chromium.launch()
+    try {
+        const page = await browser.newPage()
+        await page.goto(pathToFileURL(paths.previewPath).href, {waitUntil: 'load'})
+        await page.evaluate(async () => {
+            await document.fonts.ready
+            await document.fonts.load('11pt Inter', 'Съешь ещё этих мягких французских булок')
+        })
+
+        const fontLoaded = await page.evaluate(() =>
+            document.fonts.check('11pt Inter', 'Съешь ещё этих мягких французских булок'),
+        )
+        if (!fontLoaded) throw new Error('Локальный Inter не загрузился перед печатью')
+
+        await page.pdf({
+            path: paths.outputPath,
+            format: 'A4',
+            printBackground: true,
+            preferCSSPageSize: true,
+            margin: {top: '18mm', right: '18mm', bottom: '18mm', left: '18mm'},
+        })
+    } finally {
+        await browser.close()
+    }
+    return paths.outputPath
 }
 
-const workDir = resolve('docs/agents-tools', workName)
-const source = JSON.parse(readFileSync(resolve('docs/agents-tools/source.json'), 'utf8'))
-const document = JSON.parse(readFileSync(resolve('docs/agents-tools/document.json'), 'utf8'))
-validateDocument(document, source)
-
-const previewPath = join(workDir, 'preview.html')
-const outputPath = join(workDir, 'guide.pdf')
-const browser = await chromium.launch()
-try {
-    const page = await browser.newPage()
-    await page.goto(pathToFileURL(previewPath).href, { waitUntil: 'load' })
-    await page.evaluate(async () => {
-        await document.fonts.ready
-        await document.fonts.load('11pt Inter', 'Съешь ещё этих мягких французских булок')
-    })
-
-    const fontLoaded = await page.evaluate(() =>
-        document.fonts.check('11pt Inter', 'Съешь ещё этих мягких французских булок'),
-    )
-    if (!fontLoaded) throw new Error('Локальный Inter не загрузился перед печатью')
-
-    await page.pdf({
-        path: outputPath,
-        format: 'A4',
-        printBackground: true,
-        preferCSSPageSize: true,
-        margin: {top: '18mm', right: '18mm', bottom: '18mm', left: '18mm'},
-    })
-} finally {
-    await browser.close()
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+    const workName = process.argv[2]
+    if (!workName) throw new Error('Использование: npm run pdf -- "ИМЯ_РАБОТЫ"')
+    console.log(`PDF создан: ${await createPdf(workName)}`)
 }
-
-console.log(`PDF создан: ${outputPath}`)
