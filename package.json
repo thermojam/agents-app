@@ -11,7 +11,8 @@
     "pdf": "node --experimental-strip-types scripts/pdf.ts",
     "typecheck": "tsc -b --pretty false",
     "source": "node --experimental-strip-types scripts/source.ts",
-    "document:check": "node --experimental-strip-types scripts/check-document.ts"
+    "document:check": "node --experimental-strip-types scripts/check-document.ts",
+    "model:check": "node --experimental-strip-types scripts/model-check.ts"
   },
   "dependencies": {
     "react": "^19.1.1",
