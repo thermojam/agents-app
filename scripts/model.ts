@@ -5,6 +5,7 @@ const REQUEST_TIMEOUT_MS = 15_000
 const MAX_TOKENS = 40
 const DEFAULT_BASE_URL = 'https://simple-claw.ru/v1'
 const DEFAULT_MODEL = 'claude-haiku-4-5'
+const DEFAULT_PROMPT = 'Объясни слово «инструмент» одним предложением.'
 
 type ChatCompletionResponse = {
     choices?: Array<{
@@ -68,9 +69,12 @@ function errorForStatus(status: number): Error {
     return new Error(`SimpleClaw отклонил запрос (HTTP ${status})`)
 }
 
-export async function requestHaiku(): Promise<ModelCheckResult> {
+export async function requestHaiku(
+    prompt = DEFAULT_PROMPT,
+    maxTokens = MAX_TOKENS,
+    timeoutMs = REQUEST_TIMEOUT_MS,
+): Promise<ModelCheckResult> {
     const { apiKey, baseUrl, model } = getConfig()
-    const prompt = 'Объясни слово «инструмент» одним предложением.'
     const response = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -80,13 +84,13 @@ export async function requestHaiku(): Promise<ModelCheckResult> {
         body: JSON.stringify({
             model,
             messages: [{ role: 'user', content: prompt }],
-            max_tokens: MAX_TOKENS,
+            max_tokens: maxTokens,
             temperature: 0.2,
         }),
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeoutMs),
     }).catch((error: unknown) => {
         if (error instanceof Error && error.name === 'TimeoutError') {
-            throw new Error('SimpleClaw не ответил за 15 секунд')
+            throw new Error(`SimpleClaw не ответил за ${Math.round(timeoutMs / 1_000)} секунд`)
         }
         throw new Error('Не удалось обратиться к SimpleClaw: проверь сеть и LLM_BASE_URL')
     })
