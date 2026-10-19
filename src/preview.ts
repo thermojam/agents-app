@@ -85,9 +85,14 @@ export function renderDocument(
         }
 
         .document-header {
+            display: flex;
+            min-height: 245mm;
+            flex-direction: column;
+            justify-content: center;
             margin-bottom: 32px;
             padding-bottom: 16px;
             border-bottom: 1px solid #e0e0e0;
+            break-after: page;
         }
 
         .eyebrow,
@@ -162,6 +167,7 @@ export function renderDocument(
             padding: 16px;
             background: #f3f3f3;
             break-inside: avoid;
+            overflow-wrap: anywhere;
         }
 
         .example-label {
@@ -170,6 +176,7 @@ export function renderDocument(
 
         .example-block p:last-child {
             margin-bottom: 0;
+            white-space: pre-line;
         }
     </style>
 </head>
