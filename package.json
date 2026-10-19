@@ -16,7 +16,9 @@
     "draft": "node --experimental-strip-types scripts/draft.ts",
     "draft:check": "node --experimental-strip-types scripts/check-draft.ts",
     "approve": "node --experimental-strip-types scripts/approve.ts",
-    "approval:check": "node --experimental-strip-types scripts/check-approval.ts"
+    "approval:check": "node --experimental-strip-types scripts/check-approval.ts",
+    "agent": "node --experimental-strip-types scripts/agent.ts",
+    "agent:check": "node --experimental-strip-types scripts/check-agent.ts"
   },
   "dependencies": {
     "react": "^19.1.1",
