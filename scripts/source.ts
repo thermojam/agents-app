@@ -1,18 +1,19 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const MAX_REDIRECTS = 5
 const MAX_BYTES = 2_000_000
 const REQUEST_TIMEOUT_MS = 20_000
 const OUTPUT_DIR = resolve('docs/agents-tools')
 
-type SourcePart = {
+export type SourcePart = {
   id: string
   heading: string
   text: string
 }
 
-type SourceDocument = {
+export type SourceDocument = {
   requestedUrl: string
   url: string
   title: string
@@ -165,20 +166,31 @@ function extractSource(html: string, finalUrl: string, requestedUrl: string): So
   }
 }
 
+export async function fetchSource(requestedUrl: string): Promise<SourceDocument> {
+  const { html, finalUrl } = await fetchHtml(requestedUrl)
+  return extractSource(html, finalUrl, requestedUrl)
+}
+
+export function saveSource(source: SourceDocument): string {
+  mkdirSync(OUTPUT_DIR, { recursive: true })
+  const outputPath = join(OUTPUT_DIR, 'source.json')
+  writeFileSync(outputPath, `${JSON.stringify(source, null, 2)}\n`)
+  return outputPath
+}
+
 async function main() {
   const requestedUrl = process.argv[2]
   if (!requestedUrl) throw new Error('Использование: npm run source -- "https://openai.com/..."')
 
-  const { html, finalUrl } = await fetchHtml(requestedUrl)
-  const source = extractSource(html, finalUrl, requestedUrl)
-  mkdirSync(OUTPUT_DIR, { recursive: true })
-  writeFileSync(join(OUTPUT_DIR, 'source.json'), `${JSON.stringify(source, null, 2)}\n`)
-  console.log(`Сохранено: ${join(OUTPUT_DIR, 'source.json')}`)
+  const source = await fetchSource(requestedUrl)
+  console.log(`Сохранено: ${saveSource(source)}`)
   console.log(`Заголовок: ${source.title}`)
   console.log(`Разделов: ${source.parts.length}`)
 }
 
-main().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : error)
-  process.exitCode = 1
-})
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error: unknown) => {
+    console.error(error instanceof Error ? error.message : error)
+    process.exitCode = 1
+  })
+}
