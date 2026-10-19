@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
-    "source": "node --experimental-strip-types scripts/source.ts"
+    "source": "node --experimental-strip-types scripts/source.ts",
+    "document:check": "node --experimental-strip-types scripts/check-document.ts"
   },
   "dependencies": {
     "react": "^19.1.1",

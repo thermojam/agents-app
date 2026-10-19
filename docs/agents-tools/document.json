@@ -1,0 +1,42 @@
+{
+  "title": "Как устроены AI-агенты",
+  "sourceUrl": "https://developers.openai.com/tracks/building-agents",
+  "sections": [
+    {
+      "id": "agent-definition",
+      "title": "Что такое агент",
+      "sourcePartId": "section-1",
+      "blocks": [
+        {
+          "id": "agent-definition-heading",
+          "type": "heading",
+          "level": 1,
+          "text": "Что такое агент"
+        },
+        {
+          "id": "agent-definition-paragraph",
+          "type": "paragraph",
+          "text": "Агент — это система с инструкциями, ограничениями и инструментами, которая действует от имени пользователя.",
+          "sourcePartId": "section-1"
+        },
+        {
+          "id": "agent-definition-parts",
+          "type": "list",
+          "items": [
+            "Инструкции объясняют, что система должна делать.",
+            "Ограничения объясняют, чего система не должна делать.",
+            "Инструменты позволяют системе действовать."
+          ],
+          "sourcePartId": "section-1"
+        },
+        {
+          "id": "agent-definition-example",
+          "type": "example",
+          "label": "Учебный пример",
+          "isExample": true,
+          "text": "Если программа может получить данные и выполнить действие по запросу пользователя, это уже не только чат с ответами."
+        }
+      ]
+    }
+  ]
+}
