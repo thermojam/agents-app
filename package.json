@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview",
+    "preview": "node --experimental-strip-types scripts/preview.ts",
+    "preview:check": "node --experimental-strip-types scripts/check-preview.ts",
     "typecheck": "tsc -b --pretty false",
     "source": "node --experimental-strip-types scripts/source.ts",
     "document:check": "node --experimental-strip-types scripts/check-document.ts"

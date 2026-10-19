@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Как устроены AI-агенты</title>
+    <style>
+        @font-face {
+            font-family: Inter;
+            font-style: normal;
+            font-weight: 100 900;
+            src: url("../../../public/fonts/InterVariable.woff2") format("woff2");
+        }
+
+        :root {
+            color: #141414;
+            background: #ffffff;
+            font-family: Inter, Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+        }
+
+        @page {
+            size: A4;
+            margin: 18mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #ffffff;
+        }
+
+        .document {
+            max-width: 174mm;
+            margin: 0 auto;
+        }
+
+        .document-header {
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .eyebrow,
+        .example-label {
+            color: #0066ff;
+            font-size: 9pt;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        h1,
+        h2,
+        h3,
+        p,
+        ul {
+            margin-top: 0;
+        }
+
+        h1 {
+            margin-bottom: 12px;
+            font-size: 28pt;
+            line-height: 1.05;
+        }
+
+        h2 {
+            margin-bottom: 16px;
+            font-size: 20pt;
+            line-height: 1.15;
+            break-after: avoid;
+        }
+
+        h3 {
+            font-size: 14pt;
+            line-height: 1.25;
+            break-after: avoid;
+        }
+
+        p {
+            margin-bottom: 12px;
+        }
+
+        .source {
+            color: #707070;
+            font-size: 9pt;
+            overflow-wrap: anywhere;
+        }
+
+        a {
+            color: #141414;
+            text-decoration: underline;
+        }
+
+        .document-section {
+            margin-bottom: 28px;
+        }
+
+        .content-heading {
+            margin-bottom: 8px;
+        }
+
+        ul {
+            padding-left: 22px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        .example-block {
+            margin: 20px 0;
+            padding: 16px;
+            background: #f3f3f3;
+            break-inside: avoid;
+        }
+
+        .example-label {
+            margin-bottom: 8px;
+        }
+
+        .example-block p:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <main class="document">
+        <header class="document-header">
+            <p class="eyebrow">Учебный PDF-гайд</p>
+            <h1>Как устроены AI-агенты</h1>
+            <p class="source">Источник: <a href="https://developers.openai.com/tracks/building-agents">https://developers.openai.com/tracks/building-agents</a></p>
+        </header>
+
+                <section class="document-section">
+                    <h2>Что такое агент</h2>
+                    <h1 class="content-heading">Что такое агент</h1>
+<p>Агент — это система с инструкциями, ограничениями и инструментами, которая действует от имени пользователя.</p>
+<ul><li>Инструкции объясняют, что система должна делать.</li><li>Ограничения объясняют, чего система не должна делать.</li><li>Инструменты позволяют системе действовать.</li></ul>
+<aside class="example-block"><p class="example-label">Учебный пример</p><p>Если программа может получить данные и выполнить действие по запросу пользователя, это уже не только чат с ответами.</p></aside>
+                </section>
+    </main>
+</body>
+</html>
