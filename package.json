@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --pretty false"
+    "typecheck": "tsc -b --pretty false",
+    "source": "node --experimental-strip-types scripts/source.ts"
   },
   "dependencies": {
     "react": "^19.1.1",
