@@ -11,7 +11,9 @@ type ChatCompletionResponse = {
     choices?: Array<{
         message?: {
             content?: unknown
+            tool_calls?: unknown
         }
+        finish_reason?: unknown
     }>
     usage?: {
         prompt_tokens?: number
@@ -20,12 +22,104 @@ type ChatCompletionResponse = {
     }
 }
 
+export type ChatMessage = {
+    role: 'system' | 'user' | 'assistant' | 'tool'
+    content: string | null
+    tool_calls?: ToolCall[]
+    tool_call_id?: string
+}
+
+export type ToolCall = {
+    id: string
+    type: 'function'
+    function: {
+        name: string
+        arguments: string
+    }
+}
+
+export type ToolDefinition = {
+    type: 'function'
+    function: {
+        name: string
+        description: string
+        parameters: Record<string, unknown>
+    }
+}
+
+export type ChatCompletionResult = {
+    baseUrl: string
+    model: string
+    message: ChatMessage
+    finishReason: string | null
+    usage?: ChatCompletionResponse['usage']
+}
+
 export type ModelCheckResult = {
     baseUrl: string
     model: string
     prompt: string
     answer: string
     usage?: ChatCompletionResponse['usage']
+}
+
+export async function requestChatCompletion(
+    messages: ChatMessage[],
+    tools: ToolDefinition[] = [],
+    maxTokens = 120,
+    timeoutMs = REQUEST_TIMEOUT_MS,
+): Promise<ChatCompletionResult> {
+    const { apiKey, baseUrl, model } = getConfig()
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+            authorization: `Bearer ${apiKey}`,
+            'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+            model,
+            messages,
+            ...(tools.length > 0 ? { tools, tool_choice: 'auto' } : {}),
+            max_tokens: maxTokens,
+            temperature: 0.2,
+        }),
+        signal: AbortSignal.timeout(timeoutMs),
+    }).catch((error: unknown) => {
+        if (error instanceof Error && error.name === 'TimeoutError') {
+            throw new Error(`SimpleClaw не ответил за ${Math.round(timeoutMs / 1_000)} секунд`)
+        }
+        throw new Error('Не удалось обратиться к SimpleClaw: проверь сеть и LLM_BASE_URL')
+    })
+
+    if (!response.ok) throw errorForStatus(response.status)
+
+    let payload: ChatCompletionResponse
+    try {
+        payload = (await response.json()) as ChatCompletionResponse
+    } catch {
+        throw new Error('SimpleClaw вернул ответ не в формате JSON')
+    }
+
+    const rawMessage = payload.choices?.[0]?.message
+    if (!rawMessage || typeof rawMessage !== 'object') {
+        throw new Error('SimpleClaw не вернул сообщение ассистента')
+    }
+
+    const content = rawMessage.content
+    const toolCalls = rawMessage.tool_calls
+    const message: ChatMessage = {
+        role: 'assistant',
+        content: typeof content === 'string' ? content : null,
+        ...(Array.isArray(toolCalls) ? { tool_calls: toolCalls as ToolCall[] } : {}),
+    }
+
+    return {
+        baseUrl,
+        model,
+        message,
+        finishReason: typeof payload.choices?.[0]?.finish_reason === 'string' ? payload.choices[0].finish_reason : null,
+        usage: payload.usage,
+    }
 }
 
 function readDotEnv(): Record<string, string> {
@@ -74,40 +168,11 @@ export async function requestHaiku(
     maxTokens = MAX_TOKENS,
     timeoutMs = REQUEST_TIMEOUT_MS,
 ): Promise<ModelCheckResult> {
-    const { apiKey, baseUrl, model } = getConfig()
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-            authorization: `Bearer ${apiKey}`,
-            'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-            model,
-            messages: [{ role: 'user', content: prompt }],
-            max_tokens: maxTokens,
-            temperature: 0.2,
-        }),
-        signal: AbortSignal.timeout(timeoutMs),
-    }).catch((error: unknown) => {
-        if (error instanceof Error && error.name === 'TimeoutError') {
-            throw new Error(`SimpleClaw не ответил за ${Math.round(timeoutMs / 1_000)} секунд`)
-        }
-        throw new Error('Не удалось обратиться к SimpleClaw: проверь сеть и LLM_BASE_URL')
-    })
-
-    if (!response.ok) throw errorForStatus(response.status)
-
-    let payload: ChatCompletionResponse
-    try {
-        payload = (await response.json()) as ChatCompletionResponse
-    } catch {
-        throw new Error('SimpleClaw вернул ответ не в формате JSON')
-    }
-
-    const answer = payload.choices?.[0]?.message?.content
+    const result = await requestChatCompletion([{ role: 'user', content: prompt }], [], maxTokens, timeoutMs)
+    const answer = result.message.content
     if (typeof answer !== 'string' || !answer.trim()) {
         throw new Error('SimpleClaw не вернул текст ответа')
     }
 
-    return { baseUrl, model, prompt, answer: answer.trim(), usage: payload.usage }
+    return { baseUrl: result.baseUrl, model: result.model, prompt, answer: answer.trim(), usage: result.usage }
 }

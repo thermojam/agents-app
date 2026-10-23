@@ -15,6 +15,10 @@ const workDir = join(temporaryRoot, 'building-agents')
 const draftPath = join(workDir, 'draft.json')
 const approvedWorkName = `agent-check-${process.pid}`
 const approvedWorkDir = join('docs/agents-tools', approvedWorkName)
+const expectedParagraph = fixture.sections
+  .flatMap((section) => section.blocks)
+  .find((block) => block.type === 'paragraph')?.text
+if (!expectedParagraph) throw new Error('Fixture не содержит абзаца для проверки PDF')
 
 try {
   mkdirSync(workDir, { recursive: true })
@@ -24,7 +28,7 @@ try {
   const firstPreview = readFileSync(first.paths.previewPath, 'utf8')
 
   if (first.document.sourceUrl !== source.url) throw new Error('Черновик ссылается не на загруженную статью')
-  if (!firstPreview.includes('Как устроены AI-агенты')) throw new Error('Просмотр не содержит заголовок черновика')
+  if (!firstPreview.includes(fixture.title)) throw new Error('Просмотр не содержит заголовок черновика')
   if (existsSync(first.paths.approvalPath) || existsSync(first.paths.outputPath)) {
     throw new Error('Путь T10 создал approval или PDF до решения человека')
   }
@@ -48,7 +52,7 @@ try {
   saveApproval(approved.paths.approvalPath, approved.document)
   const outputPath = await createPdf(approvedWorkName)
   const pdfText = execFileSync('pdftotext', [outputPath, '-'], { encoding: 'utf8' })
-  if (!pdfText.includes('Как устроены AI-агенты') || !pdfText.includes('Агент — это система')) {
+  if (!pdfText.includes(fixture.title) || !pdfText.includes(expectedParagraph.slice(0, 40))) {
     throw new Error('PDF не содержит утверждённый текст')
   }
   if (pdfText.includes('Неподтверждённый текст')) {

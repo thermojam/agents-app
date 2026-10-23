@@ -18,7 +18,15 @@
     "approve": "node --experimental-strip-types scripts/approve.ts",
     "approval:check": "node --experimental-strip-types scripts/check-approval.ts",
     "agent": "node --experimental-strip-types scripts/agent.ts",
-    "agent:check": "node --experimental-strip-types scripts/check-agent.ts"
+    "agent:resume": "node --experimental-strip-types scripts/agent-resume.ts",
+    "agent:check": "node --experimental-strip-types scripts/check-agent.ts",
+    "tool:check": "node --experimental-strip-types scripts/tool-check.ts",
+    "tool:check:local": "node --experimental-strip-types scripts/check-tool.ts",
+    "tools:check": "node --experimental-strip-types scripts/check-tools.ts",
+    "agent:loop:check": "node --experimental-strip-types scripts/check-agent-loop.ts",
+    "agent:resume:check": "node --experimental-strip-types scripts/check-agent-resume.ts",
+    "agent:journal:check": "node --experimental-strip-types scripts/check-agent-journal.ts",
+    "budget:check": "node --experimental-strip-types scripts/budget-status.ts"
   },
   "dependencies": {
     "react": "^19.1.1",

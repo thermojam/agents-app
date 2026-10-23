@@ -1,0 +1,4 @@
+{"at":"2026-10-23T05:47:58.710Z","type":"model_request","tool":"get_document_status"}
+{"at":"2026-10-23T05:48:00.847Z","type":"tool_request","model":"gpt-6-luna","finishReason":"tool_calls","call":{"id":"call_9776bb0d15cd416c98f4f30751d82da6","type":"function","function":{"name":"get_document_status","arguments":"{}"}}}
+{"at":"2026-10-23T05:48:00.848Z","type":"tool_result","callId":"call_9776bb0d15cd416c98f4f30751d82da6","name":"get_document_status","result":{"workName":"building-agents","draft":true,"preview":true,"approval":false,"pdf":false,"state":"awaiting_approval","message":"Текст не утверждён человеком"}}
+{"at":"2026-10-23T05:48:03.686Z","type":"model_response","model":"gpt-6-luna","finishReason":"stop","content":"Черновик и предварительный просмотр есть. Утверждение человека ещё не получено, поэтому документ ожидает одобрения; PDF пока не создан.","usage":{"prompt_tokens":159,"completion_tokens":36,"total_tokens":195}}
