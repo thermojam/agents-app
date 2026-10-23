@@ -77,6 +77,7 @@
 - `npm run agent:loop:check` — проверить цикл, лимиты и раннее «готово».
 - `npm run agent:journal:check` — проверить trace, токены, повторы и бюджетный gate.
 - `npm run tools:check` — проверить реестр инструментов и запрет PDF без approval.
+- `npm run report:check` — проверить обязательный отчёт и лист ручной сверки.
 - `npm run agent:resume:check` — регрессия продолжения и печати; запускает Chromium.
 - `npm run agent:check` — регрессия фиксированного пути и PDF; запускает Chromium.
 - `npm run budget:check` — показать проверенный расход или «неизвестно».

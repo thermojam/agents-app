@@ -58,11 +58,20 @@ export type DocumentContent = {
     sections: DocumentSection[]
 }
 
+export class DocumentValidationError extends Error {
+    readonly code = 'DOCUMENT_VALIDATION'
+
+    constructor(message: string) {
+        super(message)
+        this.name = 'DocumentValidationError'
+    }
+}
+
 const BLOCK_TYPES = new Set(['heading', 'paragraph', 'list', 'example'])
 const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 function fail(path: string, message: string): never {
-    throw new Error(`${path}: ${message}`)
+    throw new DocumentValidationError(`${path}: ${message}`)
 }
 
 function asRecord(value: unknown, path: string): Record<string, unknown> {
@@ -78,6 +87,13 @@ function requiredString(record: Record<string, unknown>, key: string, path: stri
         fail(`${path}.${key}`, 'нужно непустое текстовое значение')
     }
     return value.trim()
+}
+
+function assertAllowedKeys(record: Record<string, unknown>, path: string, allowed: string[]): void {
+    const allowedKeys = new Set(allowed)
+    for (const key of Object.keys(record)) {
+        if (!allowedKeys.has(key)) fail(`${path}.${key}`, 'поле не разрешено')
+    }
 }
 
 function optionalSourcePartId(
@@ -112,40 +128,50 @@ function validateBlock(
     blockIds: Set<string>,
 ): DocumentBlock {
     const record = asRecord(value, path)
+    const blockType = requiredString(record, 'type', path) as DocumentBlock['type']
+    if (!BLOCK_TYPES.has(blockType)) {
+        fail(`${path}.type`, `вид «${blockType}» не разрешён`)
+    }
+    const allowedKeys =
+        blockType === 'heading'
+            ? ['id', 'type', 'level', 'text', 'sourcePartId']
+            : blockType === 'paragraph'
+              ? ['id', 'type', 'text', 'sourcePartId']
+              : blockType === 'list'
+                ? ['id', 'type', 'items', 'sourcePartId']
+                : blockType === 'example'
+                  ? ['id', 'type', 'text', 'label', 'isExample', 'sourcePartId']
+                  : ['id', 'type']
+    assertAllowedKeys(record, path, allowedKeys)
     const id = requiredString(record, 'id', path)
     if (!ID_PATTERN.test(id)) fail(`${path}.id`, 'используйте id в формате kebab-case')
     if (blockIds.has(id)) fail(`${path}.id`, `id «${id}» уже используется`)
     blockIds.add(id)
 
-    const type = requiredString(record, 'type', path) as DocumentBlock['type']
-    if (!BLOCK_TYPES.has(type)) {
-        fail(`${path}.type`, `вид «${type}» не разрешён`)
-    }
-
-    if (type === 'heading') {
+    if (blockType === 'heading') {
         const level = record.level
         if (level !== 1 && level !== 2 && level !== 3) {
             fail(`${path}.level`, 'уровень должен быть 1, 2 или 3')
         }
         return {
             id,
-            type,
+            type: blockType,
             level,
             text: requiredString(record, 'text', path),
             sourcePartId: optionalSourcePartId(record, path, partIds),
         }
     }
 
-    if (type === 'paragraph') {
+    if (blockType === 'paragraph') {
         return {
             id,
-            type,
+            type: blockType,
             text: requiredString(record, 'text', path),
             sourcePartId: requiredSourcePartId(record, path, partIds),
         }
     }
 
-    if (type === 'list') {
+    if (blockType === 'list') {
         if (!Array.isArray(record.items) || record.items.length === 0) {
             fail(`${path}.items`, 'нужен непустой список строк')
         }
@@ -157,7 +183,7 @@ function validateBlock(
         })
         return {
             id,
-            type,
+            type: blockType,
             items,
             sourcePartId: requiredSourcePartId(record, path, partIds),
         }
@@ -168,7 +194,7 @@ function validateBlock(
     }
     return {
         id,
-        type,
+        type: blockType,
         text: requiredString(record, 'text', path),
         label: 'Учебный пример',
         isExample: true,
@@ -178,6 +204,7 @@ function validateBlock(
 
 export function validateDocument(value: unknown, source: SourceDocument): DocumentContent {
     const document = asRecord(value, 'document')
+    assertAllowedKeys(document, 'document', ['title', 'sourceUrl', 'sections'])
     const title = requiredString(document, 'title', 'document')
     const sourceUrl = requiredString(document, 'sourceUrl', 'document')
     try {
@@ -186,7 +213,9 @@ export function validateDocument(value: unknown, source: SourceDocument): Docume
     } catch {
         fail('document.sourceUrl', 'нужна корректная HTTPS-ссылка')
     }
-
+    if (sourceUrl !== source.url) {
+        fail('document.sourceUrl', `ссылка должна совпадать с загруженной статьёй «${source.url}»`)
+    }
     const sourceParts = source.parts
     if (!Array.isArray(sourceParts) || sourceParts.length === 0) {
         fail('source.parts', 'источник не содержит частей')
@@ -201,6 +230,7 @@ export function validateDocument(value: unknown, source: SourceDocument): Docume
     const sections = document.sections.map((value, index) => {
         const path = `document.sections[${index}]`
         const section = asRecord(value, path)
+        assertAllowedKeys(section, path, ['id', 'title', 'sourcePartId', 'blocks'])
         const id = requiredString(section, 'id', path)
         if (!ID_PATTERN.test(id)) fail(`${path}.id`, 'используйте id в формате kebab-case')
         if (sectionIds.has(id)) fail(`${path}.id`, `id «${id}» уже используется`)

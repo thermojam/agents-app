@@ -43,11 +43,19 @@ async function fetchHtml(requestedUrl: string): Promise<{ html: string; finalUrl
   let currentUrl = assertAllowedUrl(requestedUrl)
 
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
-    const response = await fetch(currentUrl, {
-      headers: { accept: 'text/html,application/xhtml+xml' },
-      redirect: 'manual',
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    })
+    let response: Response
+    try {
+      response = await fetch(currentUrl, {
+        headers: { accept: 'text/html,application/xhtml+xml' },
+        redirect: 'manual',
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      })
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        throw new Error(`Источник не ответил за ${Math.round(REQUEST_TIMEOUT_MS / 1_000)} секунд`)
+      }
+      throw new Error('Не удалось загрузить статью: сетевой запрос отклонён')
+    }
 
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get('location')
@@ -70,13 +78,21 @@ async function fetchHtml(requestedUrl: string): Promise<{ html: string; finalUrl
     const chunks: Uint8Array[] = []
     let totalBytes = 0
 
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      if (!value) continue
-      totalBytes += value.byteLength
-      if (totalBytes > MAX_BYTES) throw new Error('Ответ превышает лимит размера')
-      chunks.push(value)
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        if (!value) continue
+        totalBytes += value.byteLength
+        if (totalBytes > MAX_BYTES) throw new Error('Ответ превышает лимит размера')
+        chunks.push(value)
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === 'Ответ превышает лимит размера') throw error
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        throw new Error(`Источник не ответил за ${Math.round(REQUEST_TIMEOUT_MS / 1_000)} секунд`)
+      }
+      throw new Error('Не удалось загрузить статью: сетевой запрос отклонён')
     }
 
     const bytes = new Uint8Array(totalBytes)

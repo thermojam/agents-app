@@ -5,6 +5,7 @@ import {
     type ToolCall,
 } from './model.ts'
 import { DOCUMENT_TOOL_DEFINITIONS, executeTool } from './tools.ts'
+import { DocumentValidationError } from '../src/document.ts'
 
 export const DEFAULT_MAX_REQUESTS = 12
 export const DEFAULT_MAX_RESPONSE_CHARS = 8_000
@@ -107,6 +108,7 @@ export async function runAgentLoop(initialMessages: ChatMessage[], options: Agen
     let successfulToolCalls = 0
     let hadToolError = false
     let humanRequired = false
+    let validationFailures = 0
     const errorAttempts = new Map<string, number>()
 
     const finish = (
@@ -176,6 +178,18 @@ export async function runAgentLoop(initialMessages: ChatMessage[], options: Agen
                 hadToolError = true
                 toolError = true
                 const errorMessage = shortError(error instanceof Error ? error.message : 'Неизвестная ошибка инструмента')
+                if (error instanceof DocumentValidationError) {
+                    validationFailures += 1
+                    if (validationFailures >= MAX_SAME_ERROR_ATTEMPTS) {
+                        result = JSON.stringify({ ok: false, error: errorMessage })
+                        messages.push({ role: 'tool', content: result, tool_call_id: call.id })
+                        options.onToolResult?.(requests, call.function.name, result, toolError)
+                        return finish(
+                            'awaiting_human',
+                            `Проверка черновика не прошла дважды; требуется человек: ${errorMessage}`,
+                        )
+                    }
+                }
                 humanRequired ||= needsHuman(errorMessage)
                 result = JSON.stringify({ ok: false, error: errorMessage })
             }

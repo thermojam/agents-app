@@ -12,6 +12,7 @@ import type { ChatMessage } from './model.ts'
 import { fetchSource, saveSource } from './source.ts'
 import type { SourceDocument } from './source.ts'
 import { createTraceWriter } from './trace.ts'
+import { writeQualityReport } from './report.ts'
 
 export const FIXED_WORK_NAME = 'building-agents'
 const AGENTS_TOOLS_DIR = resolve('docs/agents-tools')
@@ -23,6 +24,8 @@ export type AgentPaths = {
   previewPath: string
   approvalPath: string
   outputPath: string
+  reportPath: string
+  manualReviewPath: string
   tracePath: string
   usagePath: string
 }
@@ -77,6 +80,8 @@ export function getAgentPaths(workName = FIXED_WORK_NAME, rootDir = AGENTS_TOOLS
     previewPath: join(workDir, 'preview.html'),
     approvalPath: join(workDir, 'approval.json'),
     outputPath: join(workDir, 'guide.pdf'),
+    reportPath: join(workDir, 'report.json'),
+    manualReviewPath: join(workDir, 'manual-review.md'),
     tracePath: join(workDir, 'trace.jsonl'),
     usagePath: join(workDir, 'usage.jsonl'),
   }
@@ -98,6 +103,7 @@ export function prepareFixedWork(
   }
 
   mkdirSync(paths.workDir, { recursive: true })
+  writeQualityReport(paths.reportPath, paths.manualReviewPath, document, source)
   writeFileSync(paths.previewPath, renderDocument(document, '../../../public/fonts/InterVariable.woff2'))
   return { source, document, paths }
 }
@@ -130,6 +136,8 @@ function resetStartState(paths: AgentPaths): void {
   removeIfExists(paths.previewPath)
   removeIfExists(paths.approvalPath)
   removeIfExists(paths.outputPath)
+  removeIfExists(paths.reportPath)
+  removeIfExists(paths.manualReviewPath)
   removeIfExists(paths.tracePath)
   removeIfExists(paths.usagePath)
 }
