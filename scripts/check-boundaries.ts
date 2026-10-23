@@ -127,7 +127,11 @@ try {
 
     const foreignDocument = structuredClone(validDocument) as { sourceUrl: string }
     foreignDocument.sourceUrl = 'https://openai.com/another-article'
-    expectSyncRejected('чужой источник в ответе модели', () => saveValidatedDraft(draftPath, foreignDocument, source), 'ссылка не совпадает')
+    expectSyncRejected(
+        'чужой источник в ответе модели',
+        () => saveValidatedDraft(draftPath, foreignDocument, source),
+        'ссылка должна совпадать',
+    )
 } finally {
     rmSync(temporaryDir, { recursive: true, force: true })
 }
