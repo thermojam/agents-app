@@ -5,6 +5,7 @@ import { validateDocument } from '../src/document.ts'
 import type { DocumentContent, SourceDocument } from '../src/document.ts'
 import { renderDocument } from '../src/preview.ts'
 import { requestHaiku } from './model.ts'
+import { writeQualityReport } from './report.ts'
 
 const MAX_DRAFT_TOKENS = 3_000
 const DRAFT_TIMEOUT_MS = 60_000
@@ -105,6 +106,7 @@ async function main() {
 
     mkdirSync(workDir, { recursive: true })
     const document = saveValidatedDraft(draftPath, candidate, source)
+    writeQualityReport(join(workDir, 'report.json'), join(workDir, 'manual-review.md'), document, source)
     writeFileSync(previewPath, renderDocument(document, '../../../public/fonts/InterVariable.woff2'))
 
     console.log(`Черновик принят: ${draftPath}`)

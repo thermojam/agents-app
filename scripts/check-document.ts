@@ -34,3 +34,7 @@ expectRejected('неизвестный вид блока', unknownType, 'вид 
 const missingSourcePart = structuredClone(document) as { sections: Array<{ blocks: Array<Record<string, unknown>> }> }
 missingSourcePart.sections[0].blocks[1].sourcePartId = 'section-404'
 expectRejected('отсутствующая часть источника', missingSourcePart, 'часть источника «section-404» не найдена')
+
+const arbitraryStyle = structuredClone(document) as { sections: Array<{ blocks: Array<Record<string, unknown>> }> }
+arbitraryStyle.sections[0].blocks[0].style = {color: 'red'}
+expectRejected('произвольный стиль', arbitraryStyle, 'поле не разрешено')

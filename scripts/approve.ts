@@ -11,6 +11,7 @@ import {
     saveApproval,
 } from './approval.ts'
 import type { SourceDocument } from '../src/document.ts'
+import { markReportHumanVerified } from './report.ts'
 
 async function main() {
     const workName = process.argv[2]
@@ -30,6 +31,7 @@ async function main() {
         const answer = (await readline.question('Утвердить этот текст? Введите yes/да или no/нет: ')).trim().toLowerCase()
         if (['yes', 'y', 'да', 'д', 'утвердить'].includes(answer)) {
             const approval = saveApproval(paths.approvalPath, document)
+            markReportHumanVerified(paths.reportPath, paths.manualReviewPath, document)
             console.log(`Текст утверждён. Контрольная строка: ${approval.contentSha256}`)
             console.log(`Файл: ${paths.approvalPath}`)
             return
