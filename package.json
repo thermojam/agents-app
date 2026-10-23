@@ -21,7 +21,8 @@
     "agent:check": "node --experimental-strip-types scripts/check-agent.ts",
     "tool:check": "node --experimental-strip-types scripts/tool-check.ts",
     "tool:check:local": "node --experimental-strip-types scripts/check-tool.ts",
-    "tools:check": "node --experimental-strip-types scripts/check-tools.ts"
+    "tools:check": "node --experimental-strip-types scripts/check-tools.ts",
+    "agent:loop:check": "node --experimental-strip-types scripts/check-agent-loop.ts"
   },
   "dependencies": {
     "react": "^19.1.1",
