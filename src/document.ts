@@ -204,6 +204,7 @@ export function validateDocument(value: unknown, source: SourceDocument): Docume
     } catch {
         fail('document.sourceUrl', 'нужна корректная HTTPS-ссылка')
     }
+    if (sourceUrl !== source.url) fail('document.sourceUrl', 'ссылка не совпадает с текущим источником')
     const sourceParts = source.parts
     if (!Array.isArray(sourceParts) || sourceParts.length === 0) {
         fail('source.parts', 'источник не содержит частей')

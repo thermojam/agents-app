@@ -27,6 +27,7 @@
     "agent:loop:check": "node --experimental-strip-types scripts/check-agent-loop.ts",
     "agent:resume:check": "node --experimental-strip-types scripts/check-agent-resume.ts",
     "agent:journal:check": "node --experimental-strip-types scripts/check-agent-journal.ts",
+    "boundaries:check": "node --experimental-strip-types scripts/check-boundaries.ts",
     "budget:check": "node --experimental-strip-types scripts/budget-status.ts"
   },
   "dependencies": {
