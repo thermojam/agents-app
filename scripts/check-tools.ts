@@ -23,6 +23,13 @@ const draftPath = 'docs/agents-tools/building-agents/draft.json'
 const draft = JSON.parse(readFileSync(draftPath, 'utf8'))
 const saved = JSON.parse(await executeTool('save_draft', JSON.stringify({ document: draft }))) as { blocks: number }
 if (saved.blocks < 1) throw new Error('save_draft не вернул сохранённые блоки')
+const report = JSON.parse(readFileSync('docs/agents-tools/building-agents/report.json', 'utf8')) as {
+    structural?: { status?: string }
+    manualReview?: { status?: string }
+}
+if (report.structural?.status !== 'passed' || report.manualReview?.status !== 'pending') {
+    throw new Error(`После save_draft не создан ожидающий ручной отчёт: ${JSON.stringify(report)}`)
+}
 
 for (const [name, args, expected] of [
     ['unknown_tool', '{}', 'не разрешён'],

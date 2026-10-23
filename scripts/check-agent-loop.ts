@@ -1,5 +1,6 @@
 import { runAgentLoop, type AgentLoopOptions } from './agent-loop.ts'
 import type { ChatCompletionResult, ChatMessage, ToolCall } from './model.ts'
+import { DocumentValidationError } from '../src/document.ts'
 
 function response(message: ChatMessage): ChatCompletionResult {
     return { baseUrl: 'fixture://model', model: 'fixture-model', message, finishReason: 'stop' }
@@ -49,6 +50,16 @@ const toolError = await fixtureRunner([
     response({ role: 'assistant', content: 'Готово.' }),
 ]).result
 if (toolError.status !== 'error' || !toolError.reason.includes('ошибкой')) throw new Error('Ошибка инструмента не остановила цикл')
+
+const validationFailure = await fixtureRunner([
+    response({ role: 'assistant', content: null, tool_calls: [call('9', 'save_draft')] }),
+    response({ role: 'assistant', content: null, tool_calls: [call('10', 'save_draft')] }),
+], {
+    runTool: async () => { throw new DocumentValidationError('document.sections[0].blocks[0].sourcePartId: часть источника не найдена') },
+}).result
+if (validationFailure.status !== 'awaiting_human' || !validationFailure.reason.includes('дважды')) {
+    throw new Error(`Две ошибки проверки черновика не передали решение человеку: ${JSON.stringify(validationFailure)}`)
+}
 
 const approvalError = await fixtureRunner([
     response({ role: 'assistant', content: null, tool_calls: [call('8', 'render_pdf')] }),

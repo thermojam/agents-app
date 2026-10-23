@@ -9,6 +9,7 @@ import { fetchSource, saveSource } from './source.ts'
 import { ARTICLE_TERMS, findUnexplainedTerms } from './terms.ts'
 import type { SourceDocument } from './source.ts'
 import type { ToolDefinition } from './model.ts'
+import { writeQualityReport } from './report.ts'
 
 export const CURRENT_WORK_NAME = 'building-agents'
 const SOURCE_PATH = resolve('docs/agents-tools/source.json')
@@ -152,13 +153,28 @@ export async function executeTool(name: unknown, rawArguments: unknown): Promise
         const source = readSource()
         mkdirSync(paths.workDir, { recursive: true })
         const document = saveValidatedDraft(paths.draftPath, requiredDocument(args, name), source)
-        return JSON.stringify({ workName: CURRENT_WORK_NAME, saved: true, blocks: countBlocks(document) })
+        const report = writeQualityReport(paths.reportPath, paths.manualReviewPath, document, source)
+        return JSON.stringify({
+            workName: CURRENT_WORK_NAME,
+            saved: true,
+            blocks: countBlocks(document),
+            structuralCheck: report.structural.status,
+            manualReview: report.manualReview.status,
+        })
     }
 
     if (name === 'validate_draft') {
         assertExactFields(args, name, [])
-        const document = readValidatedDraft(paths.draftPath, readSource())
-        return JSON.stringify({ workName: CURRENT_WORK_NAME, valid: true, blocks: countBlocks(document) })
+        const source = readSource()
+        const document = readValidatedDraft(paths.draftPath, source)
+        const report = writeQualityReport(paths.reportPath, paths.manualReviewPath, document, source)
+        return JSON.stringify({
+            workName: CURRENT_WORK_NAME,
+            valid: true,
+            blocks: countBlocks(document),
+            structuralCheck: report.structural.status,
+            manualReview: report.manualReview.status,
+        })
     }
 
     if (name === 'get_document_status') {

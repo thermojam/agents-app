@@ -14,6 +14,8 @@ export type WorkPaths = {
     approvalPath: string
     previewPath: string
     outputPath: string
+    reportPath: string
+    manualReviewPath: string
 }
 
 export function getWorkPaths(workName: string): WorkPaths {
@@ -28,6 +30,8 @@ export function getWorkPaths(workName: string): WorkPaths {
         approvalPath: join(workDir, 'approval.json'),
         previewPath: join(workDir, 'preview.html'),
         outputPath: join(workDir, 'guide.pdf'),
+        reportPath: join(workDir, 'report.json'),
+        manualReviewPath: join(workDir, 'manual-review.md'),
     }
 }
 

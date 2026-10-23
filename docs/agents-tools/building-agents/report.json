@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-23T07:00:45.061Z",
+  "sourceUrl": "https://developers.openai.com/tracks/building-agents",
+  "draftContentSha256": "e2c356f2a282cdf1337492a5c34c348b8fbba344ecf4b90c93d20c222995ff47",
+  "structural": {
+    "status": "passed",
+    "checks": [
+      {
+        "id": "required-sections",
+        "status": "passed",
+        "detail": "7 раздел(ов) с непустыми блоками"
+      },
+      {
+        "id": "source-links",
+        "status": "passed",
+        "detail": "28 ссылок на части источника проверено"
+      },
+      {
+        "id": "example-labels",
+        "status": "passed",
+        "detail": "1 учебных пример(ов) имеют label «Учебный пример» и isExample: true"
+      }
+    ]
+  },
+  "manualReview": {
+    "status": "pending",
+    "humanVerified": false,
+    "items": [
+      {
+        "id": "main-claims",
+        "status": "pending",
+        "instruction": "Сверить основные тезисы с соответствующими частями source.json."
+      },
+      {
+        "id": "caveats",
+        "status": "pending",
+        "instruction": "Проверить, что важные ограничения и оговорки статьи сохранены."
+      },
+      {
+        "id": "terms",
+        "status": "pending",
+        "instruction": "Проверить, что важные термины объяснены новичку при первом употреблении."
+      },
+      {
+        "id": "examples",
+        "status": "pending",
+        "instruction": "Проверить, что учебные примеры помечены и не выданы за факты статьи."
+      },
+      {
+        "id": "unsupported-promises",
+        "status": "pending",
+        "instruction": "Проверить отсутствие обещаний и утверждений, которых нет в источнике."
+      }
+    ]
+  }
+}

@@ -58,11 +58,20 @@ export type DocumentContent = {
     sections: DocumentSection[]
 }
 
+export class DocumentValidationError extends Error {
+    readonly code = 'DOCUMENT_VALIDATION'
+
+    constructor(message: string) {
+        super(message)
+        this.name = 'DocumentValidationError'
+    }
+}
+
 const BLOCK_TYPES = new Set(['heading', 'paragraph', 'list', 'example'])
 const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 function fail(path: string, message: string): never {
-    throw new Error(`${path}: ${message}`)
+    throw new DocumentValidationError(`${path}: ${message}`)
 }
 
 function asRecord(value: unknown, path: string): Record<string, unknown> {
@@ -204,7 +213,9 @@ export function validateDocument(value: unknown, source: SourceDocument): Docume
     } catch {
         fail('document.sourceUrl', 'нужна корректная HTTPS-ссылка')
     }
-    if (sourceUrl !== source.url) fail('document.sourceUrl', 'ссылка не совпадает с текущим источником')
+    if (sourceUrl !== source.url) {
+        fail('document.sourceUrl', `ссылка должна совпадать с загруженной статьёй «${source.url}»`)
+    }
     const sourceParts = source.parts
     if (!Array.isArray(sourceParts) || sourceParts.length === 0) {
         fail('source.parts', 'источник не содержит частей')
