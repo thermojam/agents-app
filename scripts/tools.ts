@@ -130,7 +130,12 @@ export async function executeTool(name: unknown, rawArguments: unknown): Promise
         assertExactFields(args, name, ['url'])
         const source = await fetchSource(requiredString(args, name, 'url'))
         saveSource(source)
-        return JSON.stringify({ saved: true, url: source.url, title: source.title, parts: source.parts.length })
+        return JSON.stringify({
+            saved: true,
+            url: source.url,
+            title: source.title,
+            parts: source.parts.map(({ id, heading, text }) => ({ id, heading, text })),
+        })
     }
 
     if (name === 'save_draft') {
