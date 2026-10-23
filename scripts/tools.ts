@@ -6,6 +6,7 @@ import { saveValidatedDraft } from './draft.ts'
 import { getWorkPaths, readValidatedDraft } from './approval.ts'
 import { createPdf } from './pdf.ts'
 import { fetchSource, saveSource } from './source.ts'
+import { ARTICLE_TERMS, findUnexplainedTerms } from './terms.ts'
 import type { SourceDocument } from './source.ts'
 import type { ToolDefinition } from './model.ts'
 
@@ -52,6 +53,14 @@ export const DOCUMENT_TOOL_DEFINITIONS: ToolDefinition[] = [
         function: {
             name: 'get_document_status',
             description: 'Возвращает состояние текущей работы: черновик, просмотр, approval и PDF.',
+            parameters: { type: 'object', properties: {}, required: [], additionalProperties: false },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'find_unexplained_terms',
+            description: 'Ищет в текущем черновике термины из фиксированного списка (guardrails, RAG, MCP, jailbreak) и отмечает те, для которых не найдено простое объяснение. Это подсказка для ручной проверки понятности, а не доказательство качества текста.',
             parameters: { type: 'object', properties: {}, required: [], additionalProperties: false },
         },
     },
@@ -155,6 +164,17 @@ export async function executeTool(name: unknown, rawArguments: unknown): Promise
     if (name === 'get_document_status') {
         assertExactFields(args, name, [])
         return JSON.stringify(getDocumentStatus())
+    }
+
+    if (name === 'find_unexplained_terms') {
+        assertExactFields(args, name, [])
+        const report = findUnexplainedTerms(readValidatedDraft(paths.draftPath, readSource()), ARTICLE_TERMS)
+        return JSON.stringify({
+            workName: CURRENT_WORK_NAME,
+            unexplainedTerms: report.unexplainedTerms,
+            allExplained: report.allExplained,
+            terms: report.terms,
+        })
     }
 
     assertExactFields(args, name, [])

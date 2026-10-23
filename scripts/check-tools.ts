@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { DOCUMENT_TOOL_DEFINITIONS, executeTool } from './tools.ts'
 
 const toolNames = DOCUMENT_TOOL_DEFINITIONS.map((tool) => tool.function.name)
-const expectedNames = ['fetch_article', 'save_draft', 'validate_draft', 'get_document_status', 'render_pdf']
+const expectedNames = ['fetch_article', 'save_draft', 'validate_draft', 'get_document_status', 'find_unexplained_terms', 'render_pdf']
 if (JSON.stringify(toolNames) !== JSON.stringify(expectedNames) || toolNames.includes('approve')) {
     throw new Error(`Набор инструментов изменён: ${JSON.stringify(toolNames)}`)
 }

@@ -23,6 +23,7 @@
     "tool:check": "node --experimental-strip-types scripts/tool-check.ts",
     "tool:check:local": "node --experimental-strip-types scripts/check-tool.ts",
     "tools:check": "node --experimental-strip-types scripts/check-tools.ts",
+    "terms:check": "node --experimental-strip-types scripts/check-terms.ts",
     "agent:loop:check": "node --experimental-strip-types scripts/check-agent-loop.ts",
     "agent:resume:check": "node --experimental-strip-types scripts/check-agent-resume.ts",
     "agent:journal:check": "node --experimental-strip-types scripts/check-agent-journal.ts",
