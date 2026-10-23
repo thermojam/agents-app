@@ -5,11 +5,13 @@ import { validateDocument } from '../src/document.ts'
 import type { DocumentContent } from '../src/document.ts'
 import { renderDocument } from '../src/preview.ts'
 import { runConfiguredAgentLoop, type AgentLoopResult } from './agent-loop.ts'
+import { assertPaidExperimentsAllowed, readBudget } from './budget.ts'
 import { getDocumentStatus } from './document-status.ts'
 import { revokeApproval } from './approval.ts'
 import type { ChatMessage } from './model.ts'
 import { fetchSource, saveSource } from './source.ts'
 import type { SourceDocument } from './source.ts'
+import { createTraceWriter } from './trace.ts'
 
 export const FIXED_WORK_NAME = 'building-agents'
 const AGENTS_TOOLS_DIR = resolve('docs/agents-tools')
@@ -21,6 +23,8 @@ export type AgentPaths = {
   previewPath: string
   approvalPath: string
   outputPath: string
+  tracePath: string
+  usagePath: string
 }
 
 export type AgentResult = {
@@ -73,6 +77,8 @@ export function getAgentPaths(workName = FIXED_WORK_NAME, rootDir = AGENTS_TOOLS
     previewPath: join(workDir, 'preview.html'),
     approvalPath: join(workDir, 'approval.json'),
     outputPath: join(workDir, 'guide.pdf'),
+    tracePath: join(workDir, 'trace.jsonl'),
+    usagePath: join(workDir, 'usage.jsonl'),
   }
 }
 
@@ -124,6 +130,8 @@ function resetStartState(paths: AgentPaths): void {
   removeIfExists(paths.previewPath)
   removeIfExists(paths.approvalPath)
   removeIfExists(paths.outputPath)
+  removeIfExists(paths.tracePath)
+  removeIfExists(paths.usagePath)
 }
 
 function startMessages(requestedUrl: string): ChatMessage[] {
@@ -135,12 +143,24 @@ function startMessages(requestedUrl: string): ChatMessage[] {
 
 export async function runAgentStart(requestedUrl: string): Promise<{ result: AgentResult; loop: AgentLoopResult }> {
   const paths = getAgentPaths()
+  const trace = createTraceWriter(paths)
+  try {
+    assertPaidExperimentsAllowed(readBudget())
+  } catch (error: unknown) {
+    const reason = error instanceof Error ? error.message : String(error)
+    trace.budgetBlocked(reason)
+    throw error
+  }
   resetStartState(paths)
   console.log('[1/3] Запускаю ограниченный агентный цикл')
   const loop = await runConfiguredAgentLoop(startMessages(requestedUrl), {
     maxOutputTokens: 3_000,
     maxResponseChars: 40_000,
     timeoutMs: 60_000,
+    onModelResponse: (step, response) => trace.modelResponse(step, response),
+    onModelError: (step, reason) => trace.modelError(step, reason),
+    onToolResult: (step, tool, result, error) => trace.toolResult(step, tool, result, error),
+    onStop: (step, status, reason) => trace.stopped(step, status, reason),
   })
 
   const source = JSON.parse(readFileSync(paths.sourcePath, 'utf8')) as SourceDocument

@@ -66,7 +66,7 @@ const modelError = await runAgentLoop([{ role: 'user', content: 'Проверь 
     },
     runTool: async () => '{}',
 })
-if (modelError.status !== 'error' || modelError.requests !== 1 || !modelError.reason.includes('тайм-аут')) {
+if (modelError.status !== 'error' || modelError.requests !== 2 || !modelError.reason.includes('после 2 попыток')) {
     throw new Error('Ошибка запроса модели не получила статус error')
 }
 

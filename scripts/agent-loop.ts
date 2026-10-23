@@ -10,6 +10,8 @@ export const DEFAULT_MAX_REQUESTS = 12
 export const DEFAULT_MAX_RESPONSE_CHARS = 8_000
 export const DEFAULT_MAX_OUTPUT_TOKENS = 120
 export const DEFAULT_TIMEOUT_MS = 15_000
+export const MAX_SAME_ERROR_ATTEMPTS = 2
+const MAX_ERROR_CHARS = 400
 
 export type AgentLoopStatus = 'completed' | 'awaiting_human' | 'error' | 'limit'
 
@@ -33,6 +35,10 @@ export type AgentLoopOptions = {
         timeoutMs: number,
     ) => Promise<ChatCompletionResult>
     runTool: (name: string, argumentsText: string) => Promise<string>
+    onModelResponse?: (step: number, response: ChatCompletionResult) => void
+    onModelError?: (step: number, reason: string) => void
+    onToolResult?: (step: number, tool: string, result: string, error: boolean) => void
+    onStop?: (step: number, status: AgentLoopStatus, reason: string) => void
 }
 
 function failResult(
@@ -72,6 +78,11 @@ function readToolCalls(message: ChatMessage): ToolCall[] | null {
     return message.tool_calls
 }
 
+function shortError(value: string): string {
+    const compact = value.replace(/\s+/g, ' ').trim()
+    return compact.length > MAX_ERROR_CHARS ? `${compact.slice(0, MAX_ERROR_CHARS - 1)}…` : compact
+}
+
 function needsHuman(content: string): boolean {
     try {
         const value = JSON.parse(content) as { state?: unknown }
@@ -96,6 +107,25 @@ export async function runAgentLoop(initialMessages: ChatMessage[], options: Agen
     let successfulToolCalls = 0
     let hadToolError = false
     let humanRequired = false
+    const errorAttempts = new Map<string, number>()
+
+    const finish = (
+        status: AgentLoopStatus,
+        reason: string,
+        messagesToReturn: ChatMessage[] = messages,
+    ): AgentLoopResult => {
+        options.onStop?.(requests, status, reason)
+        return failResult(status, reason, requests, toolCalls, successfulToolCalls, messagesToReturn)
+    }
+
+    const repeatedError = (kind: string, message: string): string | null => {
+        const key = `${kind}:${message}`
+        const attempts = (errorAttempts.get(key) ?? 0) + 1
+        errorAttempts.set(key, attempts)
+        return attempts >= MAX_SAME_ERROR_ATTEMPTS
+            ? `Повторяющаяся ошибка остановила цикл после ${MAX_SAME_ERROR_ATTEMPTS} попыток: ${message}`
+            : null
+    }
 
     while (requests < maxRequests) {
         requests += 1
@@ -103,66 +133,69 @@ export async function runAgentLoop(initialMessages: ChatMessage[], options: Agen
         try {
             reply = await options.requestModel(messages, maxOutputTokens, timeoutMs)
         } catch (error: unknown) {
-            return failResult(
-                'error',
-                error instanceof Error ? `Запрос модели завершился ошибкой: ${error.message}` : 'Запрос модели завершился неизвестной ошибкой',
-                requests,
-                toolCalls,
-                successfulToolCalls,
-                messages,
-            )
+            const message = shortError(error instanceof Error ? error.message : 'Запрос модели завершился неизвестной ошибкой')
+            options.onModelError?.(requests, message)
+            const repeated = repeatedError('model', message)
+            if (repeated) return finish('error', repeated)
+            continue
         }
-        if (JSON.stringify(reply.message).length > maxResponseChars) {
-            return failResult('error', 'Ответ модели превышает установленный лимит длины', requests, toolCalls, successfulToolCalls, messages)
-        }
-
         const calls = readToolCalls(reply.message)
         messages.push(reply.message)
+        options.onModelResponse?.(requests, reply)
+        if (JSON.stringify(reply.message).length > maxResponseChars) {
+            return finish('error', 'Ответ модели превышает установленный лимит длины')
+        }
         if (calls === null) {
             if (hadToolError) {
-                return failResult(
+                return finish(
                     humanRequired ? 'awaiting_human' : 'error',
                     humanRequired ? 'Ожидается решение человека' : 'Инструмент завершился ошибкой, исправление не получено',
-                    requests,
-                    toolCalls,
-                    successfulToolCalls,
-                    messages,
                 )
             }
             if (successfulToolCalls === 0) {
-                return failResult('error', 'Модель сообщила о завершении без выполненного инструмента', requests, toolCalls, successfulToolCalls, messages)
+                return finish('error', 'Модель сообщила о завершении без выполненного инструмента')
             }
-            return failResult(
+            return finish(
                 humanRequired ? 'awaiting_human' : 'completed',
                 reply.message.content?.trim() || (humanRequired ? 'Ожидается решение человека' : 'Цикл завершён'),
-                requests,
-                toolCalls,
-                successfulToolCalls,
-                messages,
             )
         }
         if (calls.length === 0) {
-            return failResult('error', 'Модель вернула некорректный список вызовов инструментов', requests, toolCalls, successfulToolCalls, messages)
+            return finish('error', 'Модель вернула некорректный список вызовов инструментов')
         }
 
         for (const call of calls) {
             toolCalls += 1
             let result: string
+            let toolError = false
             try {
                 result = await options.runTool(call.function.name, call.function.arguments)
                 successfulToolCalls += 1
                 humanRequired ||= needsHuman(result)
             } catch (error: unknown) {
                 hadToolError = true
-                const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка инструмента'
+                toolError = true
+                const errorMessage = shortError(error instanceof Error ? error.message : 'Неизвестная ошибка инструмента')
                 humanRequired ||= needsHuman(errorMessage)
                 result = JSON.stringify({ ok: false, error: errorMessage })
             }
             messages.push({ role: 'tool', content: result, tool_call_id: call.id })
+            options.onToolResult?.(requests, call.function.name, result, toolError)
+            if (toolError) {
+                const errorMessage = (() => {
+                    try {
+                        return (JSON.parse(result) as { error?: unknown }).error
+                    } catch {
+                        return result
+                    }
+                })()
+                const repeated = repeatedError('tool', typeof errorMessage === 'string' ? errorMessage : result)
+                if (repeated) return finish('error', repeated)
+            }
         }
     }
 
-    return failResult('limit', `Достигнут лимит обращений к модели: ${maxRequests}`, requests, toolCalls, successfulToolCalls, messages)
+    return finish('limit', `Достигнут лимит обращений к модели: ${maxRequests}`)
 }
 
 export function runConfiguredAgentLoop(initialMessages: ChatMessage[], options: Omit<Partial<AgentLoopOptions>, 'requestModel' | 'runTool'> = {}) {
