@@ -4,6 +4,7 @@ import {
     PARAGRAPH_TONES,
     type DocumentBlock,
     type DocumentContent,
+    type DocumentSection,
     type ExampleFrame,
     type ParagraphTone,
 } from './document'
@@ -43,6 +44,53 @@ function withStyle(block: DocumentBlock, value: string): DocumentBlock {
     return block
 }
 
+function sectionOf(document: DocumentContent, id: string): DocumentSection | undefined {
+    return document.sections.find((section) => section.blocks.some((item) => item.id === id))
+}
+
+function withBlocks(document: DocumentContent, sectionId: string, blocks: DocumentBlock[]): DocumentContent {
+    return {...document, sections: document.sections.map((s) => (s.id === sectionId ? {...s, blocks} : s))}
+}
+
+function moveBlock(document: DocumentContent, id: string, step: number): DocumentContent {
+    const section = sectionOf(document, id)
+    if (!section) return document
+    const from = section.blocks.findIndex((item) => item.id === id)
+    const to = from + step
+    if (to < 0 || to >= section.blocks.length) return document
+    const blocks = [...section.blocks]
+    const [moved] = blocks.splice(from, 1)
+    blocks.splice(to, 0, moved)
+    return withBlocks(document, section.id, blocks)
+}
+
+function removeBlock(document: DocumentContent, id: string): DocumentContent {
+    const section = sectionOf(document, id)
+    if (!section) return document
+    return withBlocks(document, section.id, section.blocks.filter((item) => item.id !== id))
+}
+
+function addParagraph(document: DocumentContent, afterId: string, id: string): DocumentContent {
+    const section = sectionOf(document, afterId)
+    if (!section) return document
+    const index = section.blocks.findIndex((item) => item.id === afterId)
+    const blocks = [...section.blocks]
+    blocks.splice(index + 1, 0, {id, type: 'paragraph', text: 'Новый абзац', sourcePartId: section.sourcePartId})
+    return withBlocks(document, section.id, blocks)
+}
+
+// Отмена возвращает структуру блоков из снимка, но сохраняет текст и оформление, которые человек ввёл после него.
+function restoreStructure(snapshot: DocumentContent, current: DocumentContent): DocumentContent {
+    const edited = new Map(current.sections.flatMap((section) => section.blocks).map((item) => [item.id, item]))
+    return {
+        ...snapshot,
+        sections: snapshot.sections.map((section) => ({
+            ...section,
+            blocks: section.blocks.map((item) => (edited.has(item.id) ? {...item, ...edited.get(item.id)} : item)),
+        })),
+    }
+}
+
 function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error)
 }
@@ -53,6 +101,7 @@ export default function WorkPanel() {
     const [saved, setSaved] = useState<DocumentContent | null>(null)
     const [draft, setDraft] = useState<DocumentContent | null>(null)
     const [blockId, setBlockId] = useState('')
+    const [history, setHistory] = useState<DocumentContent[]>([])
     const [message, setMessage] = useState('')
     const [error, setError] = useState('')
 
@@ -63,6 +112,8 @@ export default function WorkPanel() {
     const dirty = draft !== null && saved !== null && JSON.stringify(draft) !== JSON.stringify(saved)
     const block = draft?.sections.flatMap((section) => section.blocks).find((item) => item.id === blockId)
     const styles = block && styleOptions(block)
+    const section = draft && sectionOf(draft, blockId)
+    const index = section ? section.blocks.findIndex((item) => item.id === blockId) : -1
 
     async function openWork(next: string) {
         if (dirty && !window.confirm('Есть несохранённые правки. Открыть другую работу?')) return
@@ -73,10 +124,47 @@ export default function WorkPanel() {
             setName(next)
             setSaved(document)
             setDraft(document)
+            setHistory([])
             setBlockId(document.sections[0]?.blocks[0]?.id ?? '')
         } catch (reason) {
             setError(errorMessage(reason))
         }
+    }
+
+    function changeStructure(next: DocumentContent, selectId: string) {
+        if (!draft) return
+        setHistory([...history, draft])
+        setDraft(next)
+        setBlockId(selectId)
+        setMessage('')
+    }
+
+    function undo() {
+        const snapshot = history.at(-1)
+        if (!draft || !snapshot) return
+        const restored = restoreStructure(snapshot, draft)
+        setHistory(history.slice(0, -1))
+        setDraft(restored)
+        if (!restored.sections.some((item) => item.blocks.some((entry) => entry.id === blockId))) {
+            setBlockId(restored.sections[0]?.blocks[0]?.id ?? '')
+        }
+        setMessage('')
+    }
+
+    function deleteBlock() {
+        if (!draft || !section || section.blocks.length < 2) return
+        const next = section.blocks[index + 1] ?? section.blocks[index - 1]
+        changeStructure(removeBlock(draft, blockId), next.id)
+    }
+
+    function moveSelected(step: number) {
+        if (draft) changeStructure(moveBlock(draft, blockId, step), blockId)
+    }
+
+    function addBlock() {
+        if (!draft) return
+        const id = `paragraph-${Date.now().toString(36)}`
+        changeStructure(addParagraph(draft, blockId, id), id)
     }
 
     function updateBlock(change: (item: DocumentBlock) => DocumentBlock) {
@@ -173,6 +261,27 @@ export default function WorkPanel() {
                                     </select>
                                 </>
                             )}
+                            <div className="block-actions">
+                                <button type="button" onClick={() => moveSelected(-1)} disabled={index <= 0}>
+                                    Выше
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => moveSelected(1)}
+                                    disabled={!section || index >= section.blocks.length - 1}
+                                >
+                                    Ниже
+                                </button>
+                                <button type="button" onClick={addBlock}>
+                                    Добавить абзац
+                                </button>
+                                <button type="button" onClick={deleteBlock} disabled={!section || section.blocks.length < 2}>
+                                    Удалить блок
+                                </button>
+                                <button type="button" onClick={undo} disabled={history.length === 0}>
+                                    Отменить
+                                </button>
+                            </div>
                             <div className="save-row">
                                 <button type="button" onClick={save} disabled={!dirty}>
                                     Сохранить
