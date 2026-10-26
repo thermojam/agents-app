@@ -9,13 +9,27 @@ import {
     type ParagraphTone,
 } from './document'
 import {renderDocument} from './preview'
-import {fetchWorkNames, loadWork, saveWork} from './works'
+import {
+    approveWork,
+    fetchWorkNames,
+    fetchWorkStatus,
+    loadWork,
+    printWork,
+    saveWork,
+    type WorkStatus,
+} from './works'
 
 const BLOCK_LABELS: Record<DocumentBlock['type'], string> = {
     heading: 'Заголовок',
     paragraph: 'Абзац',
     list: 'Список',
     example: 'Учебный пример',
+}
+
+const PRINTED_LABELS: Record<WorkStatus['printed'], string> = {
+    none: 'ещё не печатали',
+    current: 'сохранённая версия',
+    older: 'более ранняя версия',
 }
 
 function blockText(block: DocumentBlock): string {
@@ -104,6 +118,8 @@ export default function WorkPanel() {
     const [history, setHistory] = useState<DocumentContent[]>([])
     const [message, setMessage] = useState('')
     const [error, setError] = useState('')
+    const [status, setStatus] = useState<WorkStatus | null>(null)
+    const [busy, setBusy] = useState(false)
 
     useEffect(() => {
         fetchWorkNames().then(setNames).catch((reason) => setError(errorMessage(reason)))
@@ -126,6 +142,7 @@ export default function WorkPanel() {
             setDraft(document)
             setHistory([])
             setBlockId(document.sections[0]?.blocks[0]?.id ?? '')
+            setStatus(await fetchWorkStatus(next))
         } catch (reason) {
             setError(errorMessage(reason))
         }
@@ -192,8 +209,23 @@ export default function WorkPanel() {
                         ? 'Сохранено.'
                         : 'Изменений нет.',
             )
+            setStatus(await fetchWorkStatus(name))
         } catch (reason) {
             setError(errorMessage(reason))
+        }
+    }
+
+    // Ошибка утверждения или печати только показывается: черновик и его несохранённые правки не меняются.
+    async function runWorkAction(action: (work: string) => Promise<WorkStatus>, done: string) {
+        setError('')
+        setBusy(true)
+        try {
+            setStatus(await action(name))
+            setMessage(done)
+        } catch (reason) {
+            setError(errorMessage(reason))
+        } finally {
+            setBusy(false)
         }
     }
 
@@ -286,10 +318,31 @@ export default function WorkPanel() {
                                 <button type="button" onClick={save} disabled={!dirty}>
                                     Сохранить
                                 </button>
+                                <button
+                                    type="button"
+                                    onClick={() => runWorkAction(approveWork, 'Текущая версия утверждена.')}
+                                    disabled={dirty || busy}
+                                >
+                                    Утвердить текущую версию
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => runWorkAction(printWork, 'PDF собран из утверждённой версии.')}
+                                    disabled={dirty || busy || !status?.approved}
+                                >
+                                    Собрать PDF
+                                </button>
                                 <p className="status" role="status">
                                     {error ? <span className="work-error">{error}</span> : message}
                                 </p>
                             </div>
+                            {status && (
+                                <p className="note">
+                                    В просмотре: {dirty ? 'несохранённая правка' : 'сохранённая версия'}. Утверждение
+                                    сохранённой версии: {status.approved ? 'есть' : 'нет'}. Напечатано:{' '}
+                                    {PRINTED_LABELS[status.printed]}.
+                                </p>
+                            )}
                         </div>
                     </div>
                 ) : (

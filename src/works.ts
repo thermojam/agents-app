@@ -23,3 +23,27 @@ export async function saveWork(name: string, document: DocumentContent): Promise
     if (!response.ok) throw new Error(data.error)
     return data
 }
+
+export type WorkStatus = {approved: boolean; printed: 'none' | 'current' | 'older'}
+
+async function postWork(name: string, action: string): Promise<WorkStatus> {
+    const response = await fetch(`/api/works/${name}/${action}`, {method: 'POST'})
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error)
+    return data
+}
+
+export async function fetchWorkStatus(name: string): Promise<WorkStatus> {
+    const response = await fetch(`/api/works/${name}/status`)
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error)
+    return data
+}
+
+export function approveWork(name: string): Promise<WorkStatus> {
+    return postWork(name, 'approve')
+}
+
+export function printWork(name: string): Promise<WorkStatus> {
+    return postWork(name, 'print')
+}
