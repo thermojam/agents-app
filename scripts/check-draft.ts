@@ -40,7 +40,7 @@ try {
         const fixturePreviewPath = join(workDir, 'preview.html')
         mkdirSync(workDir, { recursive: true })
         const fixture = saveValidatedDraft(fixtureDraftPath, validDocument, source)
-        writeFileSync(fixturePreviewPath, renderDocument(fixture, '../../../public/fonts/InterVariable.woff2'))
+        writeFileSync(fixturePreviewPath, renderDocument(fixture, '../../../public/fonts'))
         console.log(`Локальный T08-ответ сохранён: ${fixtureDraftPath}`)
         console.log(`Локальный просмотр создан: ${fixturePreviewPath}`)
     }

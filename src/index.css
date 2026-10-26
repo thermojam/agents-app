@@ -1,5 +1,13 @@
+@font-face {
+    font-family: "Sligoil Micro";
+    font-style: normal;
+    font-weight: 400;
+    src: url("/fonts/Sligoil-Micro.otf") format("opentype"),
+        url("/fonts/Sligoil-Micro.ttf") format("truetype");
+}
+
 :root {
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: "Sligoil Micro", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color: #141414;
     background: #f5f6f8;
     font-synthesis: none;
@@ -128,6 +136,159 @@ button:hover {
     line-height: 1.5;
 }
 
+.works {
+    display: grid;
+    grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.work-list {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.work-list button {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #c8cdd5;
+    background: #fff;
+    color: inherit;
+    overflow-wrap: anywhere;
+    text-align: left;
+}
+
+.work-list button:hover {
+    background: #f5f6f8;
+}
+
+.work-list button[aria-pressed="true"] {
+    border-color: #0066ff;
+}
+
+.work-list button:disabled {
+    color: #8a8f98;
+    cursor: default;
+}
+
+.work-list button:disabled:hover {
+    background: #fff;
+}
+
+.work-error {
+    margin: 6px 0 0;
+    color: #b42318;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.editor {
+    display: grid;
+    gap: 20px;
+    min-width: 0;
+}
+
+.block-picker {
+    display: grid;
+    gap: 16px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.section-title {
+    margin: 0 0 8px;
+    color: #6f747d;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.block-editor label {
+    display: block;
+    margin-bottom: 8px;
+    color: #6f747d;
+    font-size: 0.85rem;
+}
+
+.block-editor textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #c8cdd5;
+    color: inherit;
+    font: inherit;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.block-editor textarea:focus {
+    outline: 2px solid #0066ff;
+    outline-offset: 2px;
+}
+
+.block-editor textarea + label {
+    margin-top: 12px;
+}
+
+.block-editor select {
+    padding: 10px 12px;
+    border: 1px solid #c8cdd5;
+    color: inherit;
+    background: #fff;
+}
+
+.block-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.suggestion {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px solid #c8cdd5;
+    background: #f6f7f9;
+}
+
+.suggestion-text {
+    margin: 0;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.save-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.save-row .status {
+    margin: 0;
+}
+
+button:disabled {
+    background: #c8cdd5;
+    cursor: default;
+}
+
+button:disabled:hover {
+    background: #c8cdd5;
+}
+
+.preview {
+    width: 100%;
+    height: 75vh;
+    margin-top: 24px;
+    border: 1px solid #e0e3e8;
+    background: #fff;
+}
+
 @media (max-width: 620px) {
     .page-shell {
         width: min(100% - 28px, 840px);
@@ -140,5 +301,9 @@ button:hover {
 
     .url-row {
         flex-direction: column;
+    }
+
+    .works {
+        grid-template-columns: 1fr;
     }
 }

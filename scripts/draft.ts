@@ -107,7 +107,7 @@ async function main() {
     mkdirSync(workDir, { recursive: true })
     const document = saveValidatedDraft(draftPath, candidate, source)
     writeQualityReport(join(workDir, 'report.json'), join(workDir, 'manual-review.md'), document, source)
-    writeFileSync(previewPath, renderDocument(document, '../../../public/fonts/InterVariable.woff2'))
+    writeFileSync(previewPath, renderDocument(document, '../../../public/fonts'))
 
     console.log(`Черновик принят: ${draftPath}`)
     console.log(`Просмотр создан: ${previewPath}`)

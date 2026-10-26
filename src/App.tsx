@@ -1,4 +1,5 @@
 import {FormEvent, useState} from 'react'
+import WorkPanel from './WorkPanel'
 
 function App() {
     const [articleUrl, setArticleUrl] = useState('')
@@ -43,6 +44,8 @@ function App() {
                     </p>
                 )}
             </section>
+
+            <WorkPanel/>
 
             <p className="note">
                 Simple Claw подключим на серверном шаге. Секретный ключ не читается
