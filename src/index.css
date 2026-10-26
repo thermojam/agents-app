@@ -128,6 +128,63 @@ button:hover {
     line-height: 1.5;
 }
 
+.works {
+    display: grid;
+    grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.work-list {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.work-list button {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #c8cdd5;
+    background: #fff;
+    color: inherit;
+    overflow-wrap: anywhere;
+    text-align: left;
+}
+
+.work-list button:hover {
+    background: #f5f6f8;
+}
+
+.work-list button[aria-pressed="true"] {
+    border-color: #0066ff;
+}
+
+.work-list button:disabled {
+    color: #8a8f98;
+    cursor: default;
+}
+
+.work-list button:disabled:hover {
+    background: #fff;
+}
+
+.work-error {
+    margin: 6px 0 0;
+    color: #b42318;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.preview {
+    width: 100%;
+    height: 75vh;
+    border: 1px solid #e0e3e8;
+    background: #fff;
+}
+
 @media (max-width: 620px) {
     .page-shell {
         width: min(100% - 28px, 840px);
@@ -140,5 +197,9 @@ button:hover {
 
     .url-row {
         flex-direction: column;
+    }
+
+    .works {
+        grid-template-columns: 1fr;
     }
 }
