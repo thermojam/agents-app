@@ -57,7 +57,7 @@ try {
         throw new Error('Результат инструмента не вернулся модели: ' + JSON.stringify(result))
     }
     const traceText = readFileSync(join(temporaryDir, 'trace.jsonl'), 'utf8')
-    if (!traceText.includes('"tool":"find_unexplained_terms"') || !traceText.includes('jailbreak')) {
+    if (!traceText.includes('"tool":"find_unexplained_terms"') || !traceText.includes('unexplainedTerms')) {
         throw new Error('В журнале нет вызова и результата find_unexplained_terms')
     }
 } finally {

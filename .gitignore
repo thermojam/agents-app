@@ -6,3 +6,6 @@ dist
 
 .DS_Store
 *.local
+
+# история сохранений работ (локальная)
+docs/agents-tools/*/history/

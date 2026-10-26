@@ -75,7 +75,7 @@ export function getAgentPaths(workName = FIXED_WORK_NAME, rootDir = AGENTS_TOOLS
   const workDir = join(rootDir, workName)
   return {
     workDir,
-    sourcePath: join(rootDir, 'source.json'),
+    sourcePath: join(workDir, 'source.json'),
     draftPath: join(workDir, 'draft.json'),
     previewPath: join(workDir, 'preview.html'),
     approvalPath: join(workDir, 'approval.json'),
@@ -111,7 +111,7 @@ export function prepareFixedWork(
 export async function runFixedPath(requestedUrl: string): Promise<AgentResult> {
   console.log('[1/4] Загружаю разрешённую статью')
   const source = await fetchSource(requestedUrl)
-  const sourcePath = saveSource(source)
+  const sourcePath = saveSource(source, join(AGENTS_TOOLS_DIR, FIXED_WORK_NAME))
   console.log(`      Источник: ${sourcePath}`)
   console.log(`      Заголовок: ${source.title}`)
 

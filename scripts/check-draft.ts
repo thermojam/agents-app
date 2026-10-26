@@ -5,8 +5,8 @@ import { parseDraftAnswer, saveValidatedDraft } from './draft.ts'
 import type { SourceDocument } from '../src/document.ts'
 import { renderDocument } from '../src/preview.ts'
 
-const source = JSON.parse(readFileSync('docs/agents-tools/source.json', 'utf8')) as SourceDocument
-const validDocument = JSON.parse(readFileSync('docs/agents-tools/document.json', 'utf8'))
+const source = JSON.parse(readFileSync('docs/agents-tools/building-agents/source.json', 'utf8')) as SourceDocument
+const validDocument = JSON.parse(readFileSync('docs/agents-tools/building-agents.json', 'utf8'))
 const temporaryDir = mkdtempSync(join(tmpdir(), 'agents-app-draft-check-'))
 const draftPath = join(temporaryDir, 'draft.json')
 

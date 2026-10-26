@@ -114,7 +114,7 @@ function errorMessage(error: unknown): string {
 }
 
 export default function WorkPanel() {
-    const [names, setNames] = useState<string[]>([])
+    const [names, setNames] = useState<string[] | null>(null)
     const [name, setName] = useState('')
     const [saved, setSaved] = useState<DocumentContent | null>(null)
     const [draft, setDraft] = useState<DocumentContent | null>(null)
@@ -143,6 +143,7 @@ export default function WorkPanel() {
         setMessage('')
         requestSeq.current += 1
         setSuggestion(null)
+        setBusy(true)
         try {
             const document = await loadWork(next)
             setName(next)
@@ -153,6 +154,8 @@ export default function WorkPanel() {
             setStatus(await fetchWorkStatus(next))
         } catch (reason) {
             setError(errorMessage(reason))
+        } finally {
+            setBusy(false)
         }
     }
 
@@ -271,15 +274,21 @@ export default function WorkPanel() {
         <section className="panel" aria-labelledby="works-heading">
             <h2 id="works-heading">Работы</h2>
             <div className="works">
-                <ul className="work-list">
-                    {names.map((item) => (
-                        <li key={item}>
-                            <button type="button" aria-pressed={item === name} onClick={() => openWork(item)}>
-                                {item}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+                {names === null ? (
+                    <p className="note">{error || 'Загрузка работ…'}</p>
+                ) : names.length === 0 ? (
+                    <p className="note">Работ пока нет.</p>
+                ) : (
+                    <ul className="work-list">
+                        {names.map((item) => (
+                            <li key={item}>
+                                <button type="button" aria-pressed={item === name} onClick={() => openWork(item)}>
+                                    {item}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                )}
 
                 {draft && block ? (
                     <div className="editor">
@@ -393,6 +402,9 @@ export default function WorkPanel() {
                                 <p className="status" role="status">
                                     {error ? <span className="work-error">{error}</span> : message}
                                 </p>
+                                {status?.approved && status.printed === 'current' && !dirty && (
+                                    <a href={`/api/works/${name}/pdf`}>Скачать PDF</a>
+                                )}
                             </div>
                             {status && (
                                 <p className="note">
@@ -404,7 +416,7 @@ export default function WorkPanel() {
                         </div>
                     </div>
                 ) : (
-                    <p className="note">{error || 'Выберите работу.'}</p>
+                    <p className="note">{error || (busy ? 'Загрузка работы…' : 'Выберите работу.')}</p>
                 )}
             </div>
 

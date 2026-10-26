@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { validateDocument } from '../src/document.ts'
 
-const sourcePath = resolve('docs/agents-tools/source.json')
-const documentPath = resolve('docs/agents-tools/document.json')
+const sourcePath = resolve('docs/agents-tools/building-agents/source.json')
+const documentPath = resolve('docs/agents-tools/building-agents.json')
 const source = JSON.parse(readFileSync(sourcePath, 'utf8'))
 const document = JSON.parse(readFileSync(documentPath, 'utf8'))
 

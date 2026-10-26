@@ -1,4 +1,4 @@
-import {existsSync, readdirSync, readFileSync, renameSync, unlinkSync, writeFileSync} from 'node:fs'
+import {copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, unlinkSync, writeFileSync} from 'node:fs'
 import type {IncomingMessage, ServerResponse} from 'node:http'
 import {join, resolve} from 'node:path'
 import {defineConfig, type Plugin} from 'vite'
@@ -6,11 +6,13 @@ import react from '@vitejs/plugin-react'
 import {validateDocument, type SourceDocument} from './src/document'
 import {contentSha256, readApprovedDraft, readValidatedDraft, saveApproval} from './scripts/approval'
 import {SUGGESTION_MAX_CHARS, suggestBlockText} from './scripts/suggest'
+import {fetchSource, saveSource} from './scripts/source'
 import {execFile} from 'node:child_process'
 import {promisify} from 'node:util'
 
 const worksDir = resolve('docs/agents-tools')
 const namePattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const HISTORY_LIMIT = 10
 
 function send(res: ServerResponse, status: number, body: unknown) {
     res.statusCode = status
@@ -18,10 +20,10 @@ function send(res: ServerResponse, status: number, body: unknown) {
     res.end(JSON.stringify(body))
 }
 
-// Тот же путь, что у `npm run pdf`: отдельный процесс с Playwright, без него в конфиге сборки.
-async function printPdf(name: string) {
+// Тот же путь, что у `npm run pdf` и `npm run draft`: отдельный процесс, без них в конфиге сборки.
+async function runScript(script: string, name: string) {
     try {
-        await promisify(execFile)(process.execPath, ['--experimental-strip-types', 'scripts/pdf.ts', name])
+        await promisify(execFile)(process.execPath, ['--experimental-strip-types', script, name])
     } catch (error) {
         const stderr = String((error as {stderr?: string}).stderr ?? '')
         const message = stderr.split('\n').find((line) => /^\w*Error: /.test(line))
@@ -41,6 +43,14 @@ function workStatus(source: SourceDocument, draftPath: string, approvalPath: str
     const printedSha256 = existsSync(printedPath) ? JSON.parse(readFileSync(printedPath, 'utf8')).contentSha256 : null
     const printed = printedSha256 === null ? 'none' : printedSha256 === savedSha256 ? 'current' : 'older'
     return {approved, printed}
+}
+
+// Перед сохранением копируем прежний draft.json в history/; храним последние HISTORY_LIMIT копий.
+function keepDraftCopy(workPath: string, draftPath: string) {
+    const historyPath = join(workPath, 'history')
+    mkdirSync(historyPath, {recursive: true})
+    copyFileSync(draftPath, join(historyPath, `${new Date().toISOString().replace(/[:.]/g, '-')}.json`))
+    for (const old of readdirSync(historyPath).sort().slice(0, -HISTORY_LIMIT)) unlinkSync(join(historyPath, old))
 }
 
 async function readBody(req: IncomingMessage): Promise<string> {
@@ -69,9 +79,21 @@ function worksApi(): Plugin {
                             .filter((entry) => existsSync(join(worksDir, entry, 'draft.json')))
                         return send(res, 200, names)
                     }
+                    // Создание работы: статья сохраняется в папку работы, затем собирается черновик через модель.
+                    if (name === '' && req.method === 'POST') {
+                        const body = JSON.parse(await readBody(req)) as {name?: unknown; url?: unknown}
+                        if (typeof body.name !== 'string' || !namePattern.test(body.name)) {
+                            throw new Error('Имя работы: строчные латинские буквы, цифры и дефисы')
+                        }
+                        if (existsSync(join(worksDir, body.name, 'draft.json'))) throw new Error('Работа с таким именем уже есть')
+                        if (typeof body.url !== 'string') throw new Error('Укажите адрес статьи')
+                        saveSource(await fetchSource(body.url), join(worksDir, body.name))
+                        await runScript('scripts/draft.ts', body.name)
+                        return send(res, 200, {name: body.name})
+                    }
                     if (!namePattern.test(name)) return send(res, 404, {error: 'Работа не найдена'})
 
-                    const sourcePath = join(worksDir, 'source.json')
+                    const sourcePath = join(worksDir, name, 'source.json')
                     const draftPath = join(worksDir, name, 'draft.json')
                     const approvalPath = join(worksDir, name, 'approval.json')
                     const printedPath = join(worksDir, name, 'printed.json')
@@ -86,9 +108,19 @@ function worksApi(): Plugin {
                         saveApproval(approvalPath, readValidatedDraft(draftPath, source))
                         return send(res, 200, workStatus(source, draftPath, approvalPath, printedPath))
                     }
+                    // Отдаём PDF только если он собран из утверждённой и сохранённой версии.
+                    if (action === 'pdf' && req.method === 'GET') {
+                        const current = workStatus(source, draftPath, approvalPath, printedPath)
+                        if (!current.approved || current.printed !== 'current') {
+                            return send(res, 404, {error: 'PDF утверждённой версии ещё не собран'})
+                        }
+                        res.setHeader('Content-Type', 'application/pdf')
+                        res.setHeader('Content-Disposition', `attachment; filename="${name}.pdf"`)
+                        return res.end(readFileSync(join(worksDir, name, 'guide.pdf')))
+                    }
                     if (action === 'print' && req.method === 'POST') {
                         const printedSha256 = contentSha256(readValidatedDraft(draftPath, source))
-                        await printPdf(name)
+                        await runScript('scripts/pdf.ts', name)
                         writeFileSync(printedPath, `${JSON.stringify({contentSha256: printedSha256}, null, 2)}\n`)
                         return send(res, 200, workStatus(source, draftPath, approvalPath, printedPath))
                     }
@@ -113,6 +145,7 @@ function worksApi(): Plugin {
                         if (readFileSync(draftPath, 'utf8') === text) {
                             return send(res, 200, {changed: false, approvalRevoked: false})
                         }
+                        keepDraftCopy(join(worksDir, name), draftPath)
                         const temporaryPath = `${draftPath}.tmp-${process.pid}`
                         writeFileSync(temporaryPath, text)
                         renameSync(temporaryPath, draftPath)

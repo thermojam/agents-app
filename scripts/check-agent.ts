@@ -8,7 +8,7 @@ import { createPdf } from './pdf.ts'
 import type { SourceDocument } from './source.ts'
 import type { DocumentContent } from '../src/document.ts'
 
-const source = JSON.parse(readFileSync('docs/agents-tools/source.json', 'utf8')) as SourceDocument
+const source = JSON.parse(readFileSync('docs/agents-tools/building-agents/source.json', 'utf8')) as SourceDocument
 const fixture = JSON.parse(readFileSync('docs/agents-tools/building-agents/draft.json', 'utf8')) as DocumentContent
 const temporaryRoot = mkdtempSync(join(tmpdir(), 'agents-app-agent-check-'))
 const workDir = join(temporaryRoot, 'building-agents')
@@ -40,6 +40,7 @@ try {
 
   mkdirSync(approvedWorkDir, { recursive: true })
   writeFileSync(join(approvedWorkDir, 'draft.json'), `${JSON.stringify(fixture, null, 2)}\n`)
+  writeFileSync(join(approvedWorkDir, 'source.json'), `${JSON.stringify(source, null, 2)}\n`)
   const approved = prepareFixedWork(source, approvedWorkName)
   try {
     await createPdf(approvedWorkName)
@@ -52,7 +53,8 @@ try {
   saveApproval(approved.paths.approvalPath, approved.document)
   const outputPath = await createPdf(approvedWorkName)
   const pdfText = execFileSync('pdftotext', [outputPath, '-'], { encoding: 'utf8' })
-  if (!pdfText.includes(fixture.title) || !pdfText.includes(expectedParagraph.slice(0, 40))) {
+  const flatPdfText = pdfText.replace(/\s+/g, ' ')
+  if (!flatPdfText.includes(fixture.title) || !flatPdfText.includes(expectedParagraph.slice(0, 40))) {
     throw new Error('PDF не содержит утверждённый текст')
   }
   if (pdfText.includes('Неподтверждённый текст')) {

@@ -12,23 +12,28 @@ const status = JSON.parse(await executeTool('get_document_status', '{}')) as {
     approval: boolean
     pdf: boolean
 }
-if (status.state !== 'awaiting_approval' || status.approval || status.pdf) {
-    throw new Error(`Ожидался черновик без approval и PDF: ${JSON.stringify(status)}`)
+// validate_draft, save_draft и render_pdf пишут отчёт или PDF: без approval их проверяем, с approval пропускаем.
+const outputPath = 'docs/agents-tools/building-agents/guide.pdf'
+const approved = existsSync('docs/agents-tools/building-agents/approval.json')
+if (status.state !== (approved ? 'ready' : 'awaiting_approval') || status.approval !== approved || status.pdf !== existsSync(outputPath)) {
+    throw new Error(`Статус не совпадает с файлами: ${JSON.stringify(status)}`)
 }
 
-const validation = JSON.parse(await executeTool('validate_draft', '{}')) as { valid: boolean }
-if (!validation.valid) throw new Error('Корректный draft.json не прошёл validate_draft')
+if (!approved) {
+    const validation = JSON.parse(await executeTool('validate_draft', '{}')) as { valid: boolean }
+    if (!validation.valid) throw new Error('Корректный draft.json не прошёл validate_draft')
 
-const draftPath = 'docs/agents-tools/building-agents/draft.json'
-const draft = JSON.parse(readFileSync(draftPath, 'utf8'))
-const saved = JSON.parse(await executeTool('save_draft', JSON.stringify({ document: draft }))) as { blocks: number }
-if (saved.blocks < 1) throw new Error('save_draft не вернул сохранённые блоки')
-const report = JSON.parse(readFileSync('docs/agents-tools/building-agents/report.json', 'utf8')) as {
-    structural?: { status?: string }
-    manualReview?: { status?: string }
-}
-if (report.structural?.status !== 'passed' || report.manualReview?.status !== 'pending') {
-    throw new Error(`После save_draft не создан ожидающий ручной отчёт: ${JSON.stringify(report)}`)
+    const draftPath = 'docs/agents-tools/building-agents/draft.json'
+    const draft = JSON.parse(readFileSync(draftPath, 'utf8'))
+    const saved = JSON.parse(await executeTool('save_draft', JSON.stringify({ document: draft }))) as { blocks: number }
+    if (saved.blocks < 1) throw new Error('save_draft не вернул сохранённые блоки')
+    const report = JSON.parse(readFileSync('docs/agents-tools/building-agents/report.json', 'utf8')) as {
+        structural?: { status?: string }
+        manualReview?: { status?: string }
+    }
+    if (report.structural?.status !== 'passed' || report.manualReview?.status !== 'pending') {
+        throw new Error(`После save_draft не создан ожидающий ручной отчёт: ${JSON.stringify(report)}`)
+    }
 }
 
 for (const [name, args, expected] of [
@@ -44,14 +49,17 @@ for (const [name, args, expected] of [
     }
 }
 
-const outputPath = 'docs/agents-tools/building-agents/guide.pdf'
-if (existsSync(outputPath)) throw new Error('Тест T12 начался с неожиданного PDF')
-try {
-    await executeTool('render_pdf', '{}')
-    throw new Error('render_pdf неожиданно создал PDF без approval')
-} catch (error) {
-    if (!(error instanceof Error) || !error.message.includes('ещё не утверждён')) throw error
+if (!approved) {
+    const pdfExisted = existsSync(outputPath)
+    try {
+        await executeTool('render_pdf', '{}')
+        throw new Error('render_pdf неожиданно создал PDF без approval')
+    } catch (error) {
+        if (!(error instanceof Error) || !error.message.includes('ещё не утверждён')) throw error
+    }
+    if (existsSync(outputPath) !== pdfExisted) throw new Error('render_pdf изменил PDF после отказа approval')
 }
-if (existsSync(outputPath)) throw new Error('render_pdf создал PDF после отказа approval')
 
-console.log('T12: разрешённые инструменты выполняются; неизвестное имя, лишнее поле и PDF без approval отклонены до опасного действия')
+console.log(approved
+    ? 'T12: статус и разрешённые инструменты проверены; шаги записи пропущены, потому что работа утверждена (approval.json существует)'
+    : 'T12: разрешённые инструменты выполняются; неизвестное имя, лишнее поле и PDF без approval отклонены до опасного действия')

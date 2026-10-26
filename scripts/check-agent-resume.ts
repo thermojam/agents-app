@@ -6,7 +6,7 @@ import type { SourceDocument } from './source.ts'
 const workName = 'building-agents'
 const agentPaths = getAgentPaths(workName)
 const workPaths = getWorkPaths(workName)
-const source = JSON.parse(readFileSync('docs/agents-tools/source.json', 'utf8')) as SourceDocument
+const source = JSON.parse(readFileSync('docs/agents-tools/building-agents/source.json', 'utf8')) as SourceDocument
 
 if (existsSync(agentPaths.approvalPath) || existsSync(agentPaths.outputPath)) {
     throw new Error('T14 check требует чистого состояния: approval.json и guide.pdf должны отсутствовать')

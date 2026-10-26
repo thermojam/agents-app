@@ -12,7 +12,7 @@ import type { ToolDefinition } from './model.ts'
 import { writeQualityReport } from './report.ts'
 
 export const CURRENT_WORK_NAME = 'building-agents'
-const SOURCE_PATH = resolve('docs/agents-tools/source.json')
+const SOURCE_PATH = resolve('docs/agents-tools', CURRENT_WORK_NAME, 'source.json')
 
 export const DOCUMENT_TOOL_DEFINITIONS: ToolDefinition[] = [
     {
@@ -139,7 +139,7 @@ export async function executeTool(name: unknown, rawArguments: unknown): Promise
     if (name === 'fetch_article') {
         assertExactFields(args, name, ['url'])
         const source = await fetchSource(requiredString(args, name, 'url'))
-        saveSource(source)
+        saveSource(source, paths.workDir)
         return JSON.stringify({
             saved: true,
             url: source.url,

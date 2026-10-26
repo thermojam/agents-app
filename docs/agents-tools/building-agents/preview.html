@@ -6,16 +6,17 @@
     <title>Помогаем подросткам учиться, планировать и создавать будущее ИИ</title>
     <style>
         @font-face {
-            font-family: Inter;
+            font-family: "Sligoil Micro";
             font-style: normal;
-            font-weight: 100 900;
-            src: url("../../../public/fonts/InterVariable.woff2") format("woff2");
+            font-weight: 400;
+            src: url("../../../public/fonts/Sligoil-Micro.otf") format("opentype"),
+                url("../../../public/fonts/Sligoil-Micro.ttf") format("truetype");
         }
 
         :root {
             color: #141414;
             background: #ffffff;
-            font-family: Inter, Arial, sans-serif;
+            font-family: "Sligoil Micro", Arial, sans-serif;
             font-size: 11pt;
             line-height: 1.5;
         }
@@ -123,6 +124,15 @@
             background: #f3f3f3;
             break-inside: avoid;
             overflow-wrap: anywhere;
+        }
+
+        .example-line {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+        }
+
+        .muted {
+            color: #707070;
         }
 
         .example-label {

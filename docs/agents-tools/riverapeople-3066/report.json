@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-26T08:44:26.610Z",
+  "sourceUrl": "https://t.me/riverapeople/3066",
+  "draftContentSha256": "93856cc39498b314899621ef9eeec169d4cd083332ea1b3a5f50d6c3ebb6c833",
+  "structural": {
+    "status": "passed",
+    "checks": [
+      {
+        "id": "required-sections",
+        "status": "passed",
+        "detail": "3 раздел(ов) с непустыми блоками"
+      },
+      {
+        "id": "source-links",
+        "status": "passed",
+        "detail": "9 ссылок на части источника проверено"
+      },
+      {
+        "id": "example-labels",
+        "status": "passed",
+        "detail": "1 учебных пример(ов) имеют label «Учебный пример» и isExample: true"
+      }
+    ]
+  },
+  "manualReview": {
+    "status": "pending",
+    "humanVerified": false,
+    "items": [
+      {
+        "id": "main-claims",
+        "status": "pending",
+        "instruction": "Сверить основные тезисы с соответствующими частями source.json."
+      },
+      {
+        "id": "caveats",
+        "status": "pending",
+        "instruction": "Проверить, что важные ограничения и оговорки статьи сохранены."
+      },
+      {
+        "id": "terms",
+        "status": "pending",
+        "instruction": "Проверить, что важные термины объяснены новичку при первом употреблении."
+      },
+      {
+        "id": "examples",
+        "status": "pending",
+        "instruction": "Проверить, что учебные примеры помечены и не выданы за факты статьи."
+      },
+      {
+        "id": "unsupported-promises",
+        "status": "pending",
+        "instruction": "Проверить отсутствие обещаний и утверждений, которых нет в источнике."
+      }
+    ]
+  }
+}

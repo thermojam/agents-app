@@ -8,8 +8,8 @@ import { fetchSource } from './source.ts'
 import type { ChatCompletionResult, ChatMessage, ToolCall } from './model.ts'
 import type { SourceDocument } from '../src/document.ts'
 
-const source = JSON.parse(readFileSync('docs/agents-tools/source.json', 'utf8')) as SourceDocument
-const validDocument = JSON.parse(readFileSync('docs/agents-tools/document.json', 'utf8'))
+const source = JSON.parse(readFileSync('docs/agents-tools/building-agents/source.json', 'utf8')) as SourceDocument
+const validDocument = JSON.parse(readFileSync('docs/agents-tools/building-agents.json', 'utf8'))
 const originalFetch = globalThis.fetch
 
 function htmlResponse(html: string, status = 200): Response {
