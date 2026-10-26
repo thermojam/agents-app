@@ -5,7 +5,7 @@ import { validateDocument } from '../src/document.ts'
 import type { DocumentContent, SourceDocument } from '../src/document.ts'
 import { buildQualityReport, markReportHumanVerified, writeQualityReport } from './report.ts'
 
-const source = JSON.parse(readFileSync('docs/agents-tools/source.json', 'utf8')) as SourceDocument
+const source = JSON.parse(readFileSync('docs/agents-tools/building-agents/source.json', 'utf8')) as SourceDocument
 const fixture = JSON.parse(readFileSync('docs/agents-tools/building-agents/draft.json', 'utf8')) as DocumentContent
 const temporaryDir = mkdtempSync(join(tmpdir(), 'agents-app-report-check-'))
 const reportPath = join(temporaryDir, 'report.json')
@@ -48,8 +48,10 @@ try {
     }
 
     const unlabelledExample = structuredClone(fixture) as DocumentContent
-    const example = unlabelledExample.sections.flatMap((section) => section.blocks).find((block) => block.type === 'example')
-    if (!example || example.type !== 'example') throw new Error('Фикстура не содержит учебный пример')
+    const sample = unlabelledExample.sections[0].blocks.find((block) => block.type === 'paragraph')
+    if (!sample || sample.type !== 'paragraph') throw new Error('Фикстура не содержит абзаца')
+    const example = {id: 'check-example', type: 'example', text: sample.text, sourcePartId: sample.sourcePartId, label: 'Учебный пример', isExample: true} as const
+    unlabelledExample.sections[0].blocks.push(example)
     const rawExample = {...example, label: 'Обычный текст'}
     try {
         validateDocument(

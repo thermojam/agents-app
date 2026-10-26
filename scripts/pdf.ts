@@ -9,7 +9,7 @@ import { renderDocument } from '../src/preview.ts'
 
 export async function createPdf(workName: string): Promise<string> {
     const paths = getWorkPaths(workName)
-    const source = JSON.parse(readFileSync('docs/agents-tools/source.json', 'utf8')) as SourceDocument
+    const source = JSON.parse(readFileSync(resolve(paths.workDir, 'source.json'), 'utf8')) as SourceDocument
     const document = readApprovedDraft(paths.draftPath, paths.approvalPath, source)
     writeFileSync(paths.previewPath, renderDocument(document, '../../../public/fonts'))
 

@@ -10,6 +10,8 @@
     "preview:check": "node --experimental-strip-types scripts/check-preview.ts",
     "pdf": "node --experimental-strip-types scripts/pdf.ts",
     "typecheck": "tsc -b --pretty false",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "e2e": "node --experimental-strip-types tests/e2e-editor.ts",
     "source": "node --experimental-strip-types scripts/source.ts",
     "document:check": "node --experimental-strip-types scripts/check-document.ts",
     "model:check": "node --experimental-strip-types scripts/model-check.ts",
@@ -29,7 +31,8 @@
     "report:check": "node --experimental-strip-types scripts/check-report.ts",
     "agent:journal:check": "node --experimental-strip-types scripts/check-agent-journal.ts",
     "boundaries:check": "node --experimental-strip-types scripts/check-boundaries.ts",
-    "budget:check": "node --experimental-strip-types scripts/budget-status.ts"
+    "budget:check": "node --experimental-strip-types scripts/budget-status.ts",
+    "check": "npm run typecheck && npm run document:check && npm run preview:check && npm run boundaries:check && npm run draft:check && npm run approval:check && npm run budget:check && npm run agent:check && npm run terms:check && npm run report:check && npm run tools:check && npm run test"
   },
   "dependencies": {
     "react": "^19.1.1",

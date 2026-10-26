@@ -3,8 +3,8 @@ import { resolve } from 'node:path'
 import { validateDocument } from '../src/document.ts'
 import { renderDocument } from '../src/preview.ts'
 
-const source = JSON.parse(readFileSync(resolve('docs/agents-tools/source.json'), 'utf8'))
-const document = JSON.parse(readFileSync(resolve('docs/agents-tools/document.json'), 'utf8'))
+const source = JSON.parse(readFileSync(resolve('docs/agents-tools/building-agents/source.json'), 'utf8'))
+const document = JSON.parse(readFileSync(resolve('docs/agents-tools/building-agents.json'), 'utf8'))
 const unsafeDocument = structuredClone(document) as { sections: Array<{ blocks: Array<{ text?: string }> }> }
 unsafeDocument.sections[0].blocks[3].text = '<script>пример</script>'
 

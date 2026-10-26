@@ -97,7 +97,7 @@ async function main() {
         throw new Error('Использование: npm run draft -- "ИМЯ_РАБОТЫ"')
     }
 
-    const source = JSON.parse(readFileSync(resolve('docs/agents-tools/source.json'), 'utf8')) as SourceDocument
+    const source = JSON.parse(readFileSync(resolve('docs/agents-tools', workName, 'source.json'), 'utf8')) as SourceDocument
     const result = await requestHaiku(buildDraftPrompt(source), MAX_DRAFT_TOKENS, DRAFT_TIMEOUT_MS)
     const candidate = parseDraftAnswer(result.answer)
     const workDir = resolve('docs/agents-tools', workName)

@@ -70,6 +70,11 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-    console.error(error instanceof Error ? error.message : 'Неизвестная ошибка запроса инструмента')
+    const message = error instanceof Error ? error.message : 'Неизвестная ошибка запроса инструмента'
+    if (/SimpleClaw не ответил|Не удалось обратиться к SimpleClaw|HTTP 5\d\d\)/.test(message)) {
+        console.log(`tool:check пропущено: сервис недоступен. ${message}`)
+        return
+    }
+    console.error(message)
     process.exitCode = 1
 })

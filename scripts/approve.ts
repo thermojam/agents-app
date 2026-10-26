@@ -18,7 +18,7 @@ async function main() {
     if (!workName) throw new Error('Использование: npm run approve -- "ИМЯ_РАБОТЫ"')
 
     const paths = getWorkPaths(workName)
-    const source = JSON.parse(readFileSync('docs/agents-tools/source.json', 'utf8')) as SourceDocument
+    const source = JSON.parse(readFileSync(resolve(paths.workDir, 'source.json'), 'utf8')) as SourceDocument
     const document = readValidatedDraft(paths.draftPath, source)
 
     console.log('Текст, который будет утверждён:')

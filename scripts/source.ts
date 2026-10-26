@@ -5,7 +5,6 @@ import { fileURLToPath } from 'node:url'
 const MAX_REDIRECTS = 5
 const MAX_BYTES = 2_000_000
 const REQUEST_TIMEOUT_MS = 20_000
-const OUTPUT_DIR = resolve('docs/agents-tools')
 
 export type SourcePart = {
   id: string
@@ -32,8 +31,9 @@ function assertAllowedUrl(rawUrl: string): URL {
 
   const hostname = url.hostname.toLowerCase()
   const isOpenAiHost = hostname === 'openai.com' || hostname.endsWith('.openai.com')
+  const isTelegramPost = hostname === 't.me' && /^(\/s)?\/[A-Za-z0-9_]+\/\d+$/.test(url.pathname)
   if (url.protocol !== 'https:') throw new Error('Разрешены только HTTPS-адреса')
-  if (!isOpenAiHost) throw new Error('Разрешены только домены OpenAI')
+  if (!isOpenAiHost && !isTelegramPost) throw new Error('Разрешены только домены OpenAI и посты t.me/<канал>/<номер>')
   if (url.username || url.password) throw new Error('URL не должен содержать учётные данные')
 
   return url
@@ -182,24 +182,51 @@ function extractSource(html: string, finalUrl: string, requestedUrl: string): So
   }
 }
 
+// Пост t.me берём из публичного превью t.me/s/..., где есть текст поста.
+function extractTelegramPost(html: string, url: string, requestedUrl: string): SourceDocument {
+  const markup = html.match(/<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/)?.[1]
+  if (!markup) throw new Error('Не найден текст поста')
+
+  const text = cleanText(markup)
+  if (!text) throw new Error('Пост пустой')
+
+  const parts: SourcePart[] = [{ id: 'post', heading: 'Пост', text }]
+  return {
+    requestedUrl,
+    url,
+    title: text.split('\n')[0],
+    fetchedAt: new Date().toISOString(),
+    parts,
+    text: parts.map((part) => `${part.heading}\n${part.text}`).join('\n\n'),
+  }
+}
+
 export async function fetchSource(requestedUrl: string): Promise<SourceDocument> {
+  const url = assertAllowedUrl(requestedUrl)
+  if (url.hostname.toLowerCase() === 't.me') {
+    const post = url.pathname.replace(/^\/s\//, '/')
+    const { html } = await fetchHtml(`https://t.me/s${post}`)
+    return extractTelegramPost(html, `https://t.me${post}`, requestedUrl)
+  }
+
   const { html, finalUrl } = await fetchHtml(requestedUrl)
   return extractSource(html, finalUrl, requestedUrl)
 }
 
-export function saveSource(source: SourceDocument): string {
-  mkdirSync(OUTPUT_DIR, { recursive: true })
-  const outputPath = join(OUTPUT_DIR, 'source.json')
+export function saveSource(source: SourceDocument, workDir: string): string {
+  mkdirSync(workDir, { recursive: true })
+  const outputPath = join(workDir, 'source.json')
   writeFileSync(outputPath, `${JSON.stringify(source, null, 2)}\n`)
   return outputPath
 }
 
 async function main() {
   const requestedUrl = process.argv[2]
-  if (!requestedUrl) throw new Error('Использование: npm run source -- "https://openai.com/..."')
+  const workName = process.argv[3]
+  if (!requestedUrl || !workName) throw new Error('Использование: npm run source -- "https://openai.com/..." "ИМЯ_РАБОТЫ"')
 
   const source = await fetchSource(requestedUrl)
-  console.log(`Сохранено: ${saveSource(source)}`)
+  console.log(`Сохранено: ${saveSource(source, resolve('docs/agents-tools', workName))}`)
   console.log(`Заголовок: ${source.title}`)
   console.log(`Разделов: ${source.parts.length}`)
 }

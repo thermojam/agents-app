@@ -4,7 +4,7 @@ import { contentSha256, getWorkPaths, readApprovedDraft, saveApproval } from './
 import { createPdf } from './pdf.ts'
 import type { DocumentContent, SourceDocument } from '../src/document.ts'
 
-const source = JSON.parse(readFileSync('docs/agents-tools/source.json', 'utf8')) as SourceDocument
+const source = JSON.parse(readFileSync('docs/agents-tools/building-agents/source.json', 'utf8')) as SourceDocument
 const fixture = JSON.parse(readFileSync('docs/agents-tools/building-agents/draft.json', 'utf8')) as DocumentContent
 const workName = `approval-check-${process.pid}`
 const paths = getWorkPaths(workName)
@@ -12,6 +12,7 @@ const paths = getWorkPaths(workName)
 mkdirSync(paths.workDir, {recursive: true})
 try {
     writeFileSync(paths.draftPath, `${JSON.stringify(fixture, null, 2)}\n`)
+    writeFileSync(join(paths.workDir, 'source.json'), `${JSON.stringify(source, null, 2)}\n`)
 
     try {
         await createPdf(workName)

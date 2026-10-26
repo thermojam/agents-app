@@ -8,7 +8,7 @@ import { createPdf } from './pdf.ts'
 import { renderDocument } from '../src/preview.ts'
 
 const workName = 't17-page-review'
-const source = JSON.parse(readFileSync('docs/agents-tools/source.json', 'utf8')) as SourceDocument
+const source = JSON.parse(readFileSync('docs/agents-tools/building-agents/source.json', 'utf8')) as SourceDocument
 const paths = getWorkPaths(workName)
 const pagesDir = join(paths.workDir, 'pages')
 const reviewPath = join(paths.workDir, 'review.json')
