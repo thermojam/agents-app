@@ -1,12 +1,9 @@
 import {FormEvent, useState} from 'react'
-import {renderDocument} from './preview'
-import {works} from './works'
+import WorkPanel from './WorkPanel'
 
 function App() {
     const [articleUrl, setArticleUrl] = useState('')
     const [submittedUrl, setSubmittedUrl] = useState('')
-    const [selectedName, setSelectedName] = useState(works[0]?.name ?? '')
-    const selected = works.find((work) => work.name === selectedName)
 
     function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
@@ -48,36 +45,7 @@ function App() {
                 )}
             </section>
 
-            <section className="panel" aria-labelledby="works-heading">
-                <h2 id="works-heading">Работы</h2>
-                <div className="works">
-                    <ul className="work-list">
-                        {works.map((work) => (
-                            <li key={work.name}>
-                                <button
-                                    type="button"
-                                    aria-pressed={work.name === selectedName}
-                                    disabled={!work.document}
-                                    onClick={() => setSelectedName(work.name)}
-                                >
-                                    {work.name}
-                                </button>
-                                {work.error && <p className="work-error">{work.error}</p>}
-                            </li>
-                        ))}
-                    </ul>
-                    {selected?.document ? (
-                        <iframe
-                            className="preview"
-                            title={`Предпросмотр: ${selected.name}`}
-                            sandbox="allow-same-origin"
-                            srcDoc={renderDocument(selected.document, '/fonts')}
-                        />
-                    ) : (
-                        <p className="note">Выберите работу, прошедшую проверку.</p>
-                    )}
-                </div>
-            </section>
+            <WorkPanel/>
 
             <p className="note">
                 Simple Claw подключим на серверном шаге. Секретный ключ не читается

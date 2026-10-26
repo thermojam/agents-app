@@ -1,25 +1,25 @@
-/// <reference types="vite/client" />
 import {type DocumentContent, type SourceDocument, validateDocument} from './document'
 
-const files = import.meta.glob<unknown>(
-    ['../docs/agents-tools/*.json', '!../docs/agents-tools/budget.json'],
-    {eager: true, import: 'default'},
-)
-const source = files['../docs/agents-tools/source.json'] as SourceDocument
-
-export type Work = {
-    name: string
-    document?: DocumentContent
-    error?: string
+export async function fetchWorkNames(): Promise<string[]> {
+    const response = await fetch('/api/works')
+    if (!response.ok) throw new Error('Не удалось получить список работ')
+    return response.json()
 }
 
-export const works: Work[] = Object.entries(files)
-    .filter(([path]) => !/\/(source|budget)\.json$/.test(path))
-    .map(([path, json]) => {
-        const name = path.split('/').pop()!.replace(/\.json$/, '')
-        try {
-            return {name, document: validateDocument(json, source)}
-        } catch (error) {
-            return {name, error: error instanceof Error ? error.message : String(error)}
-        }
+export async function loadWork(name: string): Promise<DocumentContent> {
+    const response = await fetch(`/api/works/${name}`)
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error)
+    return validateDocument(data.draft, data.source as SourceDocument)
+}
+
+export async function saveWork(name: string, document: DocumentContent): Promise<{changed: boolean; approvalRevoked: boolean}> {
+    const response = await fetch(`/api/works/${name}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(document),
     })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error)
+    return data
+}
