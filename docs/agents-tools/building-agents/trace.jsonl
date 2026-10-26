@@ -1,1 +1,4 @@
-{"event":"budget_gate","step":0,"time":"2026-10-23T06:31:44.457Z","model":"unknown","tool":null,"result":"Платный запуск остановлен","reason":"Новый платный опыт остановлен до ручной сверки бюджета. Расход: неизвестно; остаток: неизвестно"}
+{"event":"model_response","step":1,"time":"2026-10-26T06:26:10.698Z","model":"claude-haiku-4-5","tool":"fetch_article","result":"Запрошены инструменты: fetch_article","reason":null}
+{"event":"tool_result","step":1,"time":"2026-10-26T06:26:11.066Z","model":"claude-haiku-4-5","tool":"fetch_article","result":"{\"ok\":false,\"error\":\"Страница ответила 403\"}","reason":"{\"ok\":false,\"error\":\"Страница ответила 403\"}"}
+{"event":"model_response","step":2,"time":"2026-10-26T06:26:14.091Z","model":"claude-haiku-4-5","tool":null,"result":"Страница вернула ошибку 403 (доступ запрещён). Проверь, доступна ли эта ссылка, или предоставь другой URL статьи OpenAI.","reason":null}
+{"event":"stopped","step":2,"time":"2026-10-26T06:26:14.091Z","model":"claude-haiku-4-5","tool":null,"result":"error","reason":"Инструмент завершился ошибкой, исправление не получено"}

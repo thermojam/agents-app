@@ -1,9 +1,9 @@
 {
-  "status": "unknown",
+  "status": "verified",
   "currency": "RUB",
-  "projectLimitRubles": null,
-  "spentRubles": null,
-  "remainingRubles": null,
-  "verifiedAt": null,
-  "source": null
+  "projectLimitRubles": 100,
+  "spentRubles": 0,
+  "remainingRubles": 100,
+  "verifiedAt": "2026-10-26T00:00:00Z",
+  "source": "T20-stage-d-acceptance"
 }
