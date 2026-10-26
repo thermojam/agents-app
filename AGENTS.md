@@ -13,7 +13,8 @@
 ## Источники истины
 
 - `docs/GUIDE.md` — архитектура, ограничения и критерии готовности.
-- `docs/TASKS.md` — последовательный список задач и проверок.
+- `docs/TASKS.md` — последовательный список задач и проверок (этапы T).
+- `docs/TICKETS.md` — этап E и последующие экспериментальные задачи.
 - `docs/LEARNING.md` — фактические результаты учебных опытов.
 - `docs/REVIEW-THROUGH-D.md` — последний аудит этапов A–D.
 
@@ -65,6 +66,7 @@
   `find_unexplained_terms`, `render_pdf`.
 - `docs/` — гайд, задачи, тикеты и результаты учебных опытов.
 - `docs/agents-tools/` — выбранная статья, `source.json` и каталоги работ с их артефактами.
+- `docs/agents-tools/building-agents/` — текущая рабочая папка T20; содержит draft.json, approval.json, guide.pdf и артефакты.
 
 ## Команды
 
@@ -74,9 +76,9 @@
 - `npm run build` — собрать production-версию.
 - `npm run source -- "URL"` — проверить и сохранить одну статью OpenAI.
 - `npm run draft -- "ИМЯ_РАБОТЫ"` — запросить черновик у модели.
-- `npm run pdf -- "ИМЯ_РАБОТЫ"` — собрать PDF из утверждённого черновика.
+- `npm run pdf -- "ИМЯ_РАБОТЫ"` — собрать PDF из утверждённого черновика (требует `npx playwright install` один раз).
 - `npm run agent -- "URL"` — начать агентский цикл и остановиться перед approval.
-- `npm run approve -- "ИМЯ_РАБОТЫ"` — явно утвердить текущий текст человека.
+- `npm run approve -- "ИМЯ_РАБОТЫ"` — явно утвердить текущий текст человека (требует report.json и manual-review.md в папке работы).
 - `npm run agent:resume -- "ИМЯ_РАБОТЫ"` — собрать PDF из актуального утверждённого текста.
 - `npm run document:check` — проверить поля документа и ссылки на источник.
 - `npm run draft:check` — проверить разбор и сохранение черновика.
@@ -95,7 +97,8 @@
 `npm test` в проекте пока не настроен. `npm run typecheck` и `npm run build`
 проверяют `src/` и `vite.config.ts`, но не файлы `scripts/`; агентские скрипты
 проверяются отдельными `*:check`. Текущий `agent:resume` продолжает только
-работу `building-agents`.
+работу `building-agents`. Для PDF-команд нужны браузеры Playwright; установи
+один раз: `npx playwright install`.
 
 ## Среда
 
