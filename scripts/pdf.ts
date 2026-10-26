@@ -11,7 +11,7 @@ export async function createPdf(workName: string): Promise<string> {
     const paths = getWorkPaths(workName)
     const source = JSON.parse(readFileSync('docs/agents-tools/source.json', 'utf8')) as SourceDocument
     const document = readApprovedDraft(paths.draftPath, paths.approvalPath, source)
-    writeFileSync(paths.previewPath, renderDocument(document, '../../../public/fonts/InterVariable.woff2'))
+    writeFileSync(paths.previewPath, renderDocument(document, '../../../public/fonts'))
 
     const browser = await chromium.launch()
     try {
@@ -19,13 +19,13 @@ export async function createPdf(workName: string): Promise<string> {
         await page.goto(pathToFileURL(paths.previewPath).href, {waitUntil: 'load'})
         await page.evaluate(async () => {
             await document.fonts.ready
-            await document.fonts.load('11pt Inter', 'Съешь ещё этих мягких французских булок')
+            await document.fonts.load('11pt "Sligoil Micro"', 'Съешь ещё этих мягких французских булок')
         })
 
         const fontLoaded = await page.evaluate(() =>
-            document.fonts.check('11pt Inter', 'Съешь ещё этих мягких французских булок'),
+            document.fonts.check('11pt "Sligoil Micro"', 'Съешь ещё этих мягких французских булок'),
         )
-        if (!fontLoaded) throw new Error('Локальный Inter не загрузился перед печатью')
+        if (!fontLoaded) throw new Error('Локальный шрифт Sligoil Micro не загрузился перед печатью')
 
         await page.pdf({
             path: paths.outputPath,

@@ -16,5 +16,5 @@ const outputDir = join(workDir, workName)
 mkdirSync(outputDir, { recursive: true })
 const outputPath = join(outputDir, 'preview.html')
 
-writeFileSync(outputPath, renderDocument(validatedDocument, '../../../public/fonts/InterVariable.woff2'))
+writeFileSync(outputPath, renderDocument(validatedDocument, '../../../public/fonts'))
 console.log(`Просмотр создан: ${outputPath}`)

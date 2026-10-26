@@ -32,7 +32,7 @@ const fixture: DocumentContent = {
                     id: 'russian-text',
                     type: 'paragraph',
                     text:
-                        'Русский текст нужен здесь не для красоты: он проверяет кириллицу, межстрочный интервал и читаемость после встраивания локального шрифта Inter в настоящий PDF.',
+                        'Русский текст нужен здесь не для красоты: он проверяет кириллицу, межстрочный интервал и читаемость после встраивания локального шрифта Sligoil Micro в настоящий PDF.',
                     sourcePartId: 'section-1',
                 },
                 {
@@ -112,8 +112,8 @@ async function main() {
     mkdirSync(paths.workDir, {recursive: true})
     writeFileSync(paths.draftPath, `${JSON.stringify(fixture, null, 2)}\n`)
     const document = validateDocument(fixture, source)
-    const previewHtml = renderDocument(document, '../../../public/fonts/InterVariable.woff2')
-    for (const rule of ['font-family: Inter, Arial, sans-serif', 'font-size: 28pt', 'color: #141414', 'color: #0066ff', '@page', 'size: A4', 'margin: 18mm']) {
+    const previewHtml = renderDocument(document, '../../../public/fonts')
+    for (const rule of ['font-family: "Sligoil Micro", Arial, sans-serif', 'font-size: 28pt', 'color: #141414', 'color: #0066ff', '@page', 'size: A4', 'margin: 18mm']) {
         if (!previewHtml.includes(rule)) throw new Error(`В шаблоне отсутствует разрешённое правило: ${rule}`)
     }
     writeFileSync(paths.previewPath, previewHtml)

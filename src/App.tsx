@@ -71,7 +71,7 @@ function App() {
                             className="preview"
                             title={`Предпросмотр: ${selected.name}`}
                             sandbox="allow-same-origin"
-                            srcDoc={renderDocument(selected.document, '/fonts/InterVariable.woff2')}
+                            srcDoc={renderDocument(selected.document, '/fonts')}
                         />
                     ) : (
                         <p className="note">Выберите работу, прошедшую проверку.</p>

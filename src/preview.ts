@@ -31,7 +31,7 @@ function renderBlock(block: DocumentBlock): string {
 
 export function renderDocument(
     document: DocumentContent,
-    fontPath = '../../public/fonts/InterVariable.woff2',
+    fontDir = '../../public/fonts',
 ): string {
     const sections = document.sections
         .map(
@@ -51,16 +51,17 @@ export function renderDocument(
     <title>${escapeHtml(document.title)}</title>
     <style>
         @font-face {
-            font-family: Inter;
+            font-family: "Sligoil Micro";
             font-style: normal;
-            font-weight: 100 900;
-            src: url("${fontPath}") format("woff2");
+            font-weight: 400;
+            src: url("${fontDir}/Sligoil-Micro.otf") format("opentype"),
+                url("${fontDir}/Sligoil-Micro.ttf") format("truetype");
         }
 
         :root {
             color: #141414;
             background: #ffffff;
-            font-family: Inter, Arial, sans-serif;
+            font-family: "Sligoil Micro", Arial, sans-serif;
             font-size: 11pt;
             line-height: 1.5;
         }

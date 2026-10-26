@@ -104,7 +104,7 @@ export function prepareFixedWork(
 
   mkdirSync(paths.workDir, { recursive: true })
   writeQualityReport(paths.reportPath, paths.manualReviewPath, document, source)
-  writeFileSync(paths.previewPath, renderDocument(document, '../../../public/fonts/InterVariable.woff2'))
+  writeFileSync(paths.previewPath, renderDocument(document, '../../../public/fonts'))
   return { source, document, paths }
 }
 
