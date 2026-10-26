@@ -21,12 +21,13 @@ function renderBlock(block: DocumentBlock): string {
         return `<h${block.level} class="content-heading">${escapeHtml(block.text)}</h${block.level}>`
     }
     if (block.type === 'paragraph') {
-        return `<p>${escapeHtml(block.text)}</p>`
+        return `<p${block.tone === 'muted' ? ' class="muted"' : ''}>${escapeHtml(block.text)}</p>`
     }
     if (block.type === 'list') {
         return `<ul>${block.items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`
     }
-    return `<aside class="example-block"><p class="example-label">${escapeHtml(block.label)}</p><p>${escapeHtml(block.text)}</p></aside>`
+    const frame = block.frame === 'line' ? ' example-line' : ''
+    return `<aside class="example-block${frame}"><p class="example-label">${escapeHtml(block.label)}</p><p>${escapeHtml(block.text)}</p></aside>`
 }
 
 export function renderDocument(
@@ -169,6 +170,15 @@ export function renderDocument(
             background: #f3f3f3;
             break-inside: avoid;
             overflow-wrap: anywhere;
+        }
+
+        .example-line {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+        }
+
+        .muted {
+            color: #707070;
         }
 
         .example-label {

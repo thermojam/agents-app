@@ -228,6 +228,17 @@ button:hover {
     outline-offset: 2px;
 }
 
+.block-editor textarea + label {
+    margin-top: 12px;
+}
+
+.block-editor select {
+    padding: 10px 12px;
+    border: 1px solid #c8cdd5;
+    color: inherit;
+    background: #fff;
+}
+
 .save-row {
     display: flex;
     flex-wrap: wrap;

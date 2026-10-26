@@ -24,9 +24,16 @@ export type HeadingBlock = BlockBase & {
     sourcePartId?: string
 }
 
+// Разрешённое оформление из docs/DESIGN-PDF.md; произвольный CSS не принимается.
+export const PARAGRAPH_TONES = {default: 'Обычный', muted: 'Приглушённый'} as const
+export const EXAMPLE_FRAMES = {surface: 'Серая поверхность', line: 'Тонкая линия'} as const
+export type ParagraphTone = keyof typeof PARAGRAPH_TONES
+export type ExampleFrame = keyof typeof EXAMPLE_FRAMES
+
 export type ParagraphBlock = BlockBase & {
     type: 'paragraph'
     sourcePartId: string
+    tone?: ParagraphTone
 }
 
 export type ListBlock = {
@@ -41,6 +48,7 @@ export type ExampleBlock = BlockBase & {
     label: 'Учебный пример'
     isExample: true
     sourcePartId?: string
+    frame?: ExampleFrame
 }
 
 export type DocumentBlock = HeadingBlock | ParagraphBlock | ListBlock | ExampleBlock
@@ -109,6 +117,21 @@ function optionalSourcePartId(
     return value
 }
 
+function optionalChoice<T extends string>(
+    record: Record<string, unknown>,
+    key: string,
+    path: string,
+    choices: Record<T, string>,
+): T | undefined {
+    const value = record[key]
+    if (value === undefined) return undefined
+    const allowed = Object.keys(choices)
+    if (typeof value !== 'string' || !allowed.includes(value)) {
+        fail(`${path}.${key}`, `допустимы значения: ${allowed.join(', ')}`)
+    }
+    return value as T
+}
+
 function requiredSourcePartId(
     record: Record<string, unknown>,
     path: string,
@@ -136,11 +159,11 @@ function validateBlock(
         blockType === 'heading'
             ? ['id', 'type', 'level', 'text', 'sourcePartId']
             : blockType === 'paragraph'
-              ? ['id', 'type', 'text', 'sourcePartId']
+              ? ['id', 'type', 'text', 'sourcePartId', 'tone']
               : blockType === 'list'
                 ? ['id', 'type', 'items', 'sourcePartId']
                 : blockType === 'example'
-                  ? ['id', 'type', 'text', 'label', 'isExample', 'sourcePartId']
+                  ? ['id', 'type', 'text', 'label', 'isExample', 'sourcePartId', 'frame']
                   : ['id', 'type']
     assertAllowedKeys(record, path, allowedKeys)
     const id = requiredString(record, 'id', path)
@@ -168,6 +191,7 @@ function validateBlock(
             type: blockType,
             text: requiredString(record, 'text', path),
             sourcePartId: requiredSourcePartId(record, path, partIds),
+            tone: optionalChoice(record, 'tone', path, PARAGRAPH_TONES),
         }
     }
 
@@ -199,6 +223,7 @@ function validateBlock(
         label: 'Учебный пример',
         isExample: true,
         sourcePartId: optionalSourcePartId(record, path, partIds),
+        frame: optionalChoice(record, 'frame', path, EXAMPLE_FRAMES),
     }
 }
 

@@ -1,5 +1,12 @@
 import {useEffect, useState} from 'react'
-import type {DocumentBlock, DocumentContent} from './document'
+import {
+    EXAMPLE_FRAMES,
+    PARAGRAPH_TONES,
+    type DocumentBlock,
+    type DocumentContent,
+    type ExampleFrame,
+    type ParagraphTone,
+} from './document'
 import {renderDocument} from './preview'
 import {fetchWorkNames, loadWork, saveWork} from './works'
 
@@ -16,6 +23,24 @@ function blockText(block: DocumentBlock): string {
 
 function withBlockText(block: DocumentBlock, value: string): DocumentBlock {
     return block.type === 'list' ? {...block, items: value.split('\n')} : {...block, text: value}
+}
+
+function styleOptions(block: DocumentBlock): Record<string, string> | null {
+    if (block.type === 'paragraph') return PARAGRAPH_TONES
+    if (block.type === 'example') return EXAMPLE_FRAMES
+    return null
+}
+
+function styleValue(block: DocumentBlock): string {
+    if (block.type === 'paragraph') return block.tone ?? 'default'
+    if (block.type === 'example') return block.frame ?? 'surface'
+    return ''
+}
+
+function withStyle(block: DocumentBlock, value: string): DocumentBlock {
+    if (block.type === 'paragraph') return {...block, tone: value as ParagraphTone}
+    if (block.type === 'example') return {...block, frame: value as ExampleFrame}
+    return block
 }
 
 function errorMessage(error: unknown): string {
@@ -37,6 +62,7 @@ export default function WorkPanel() {
 
     const dirty = draft !== null && saved !== null && JSON.stringify(draft) !== JSON.stringify(saved)
     const block = draft?.sections.flatMap((section) => section.blocks).find((item) => item.id === blockId)
+    const styles = block && styleOptions(block)
 
     async function openWork(next: string) {
         if (dirty && !window.confirm('Есть несохранённые правки. Открыть другую работу?')) return
@@ -53,13 +79,13 @@ export default function WorkPanel() {
         }
     }
 
-    function updateBlock(value: string) {
+    function updateBlock(change: (item: DocumentBlock) => DocumentBlock) {
         if (!draft) return
         setDraft({
             ...draft,
             sections: draft.sections.map((section) => ({
                 ...section,
-                blocks: section.blocks.map((item) => (item.id === blockId ? withBlockText(item, value) : item)),
+                blocks: section.blocks.map((item) => (item.id === blockId ? change(item) : item)),
             })),
         })
         setMessage('')
@@ -129,8 +155,24 @@ export default function WorkPanel() {
                                 id="block-text"
                                 rows={block.type === 'list' ? 6 : 4}
                                 value={blockText(block)}
-                                onChange={(event) => updateBlock(event.target.value)}
+                                onChange={(event) => updateBlock((item) => withBlockText(item, event.target.value))}
                             />
+                            {styles && (
+                                <>
+                                    <label htmlFor="block-style">Оформление</label>
+                                    <select
+                                        id="block-style"
+                                        value={styleValue(block)}
+                                        onChange={(event) => updateBlock((item) => withStyle(item, event.target.value))}
+                                    >
+                                        {Object.entries(styles).map(([value, text]) => (
+                                            <option key={value} value={value}>
+                                                {text}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </>
+                            )}
                             <div className="save-row">
                                 <button type="button" onClick={save} disabled={!dirty}>
                                     Сохранить
