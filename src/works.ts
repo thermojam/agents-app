@@ -47,3 +47,14 @@ export function approveWork(name: string): Promise<WorkStatus> {
 export function printWork(name: string): Promise<WorkStatus> {
     return postWork(name, 'print')
 }
+
+export async function suggestBlockText(name: string, blockId: string, text: string): Promise<string> {
+    const response = await fetch(`/api/works/${name}/suggest`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({blockId, text}),
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error)
+    return data.text
+}

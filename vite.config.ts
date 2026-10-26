@@ -5,6 +5,7 @@ import {defineConfig, type Plugin} from 'vite'
 import react from '@vitejs/plugin-react'
 import {validateDocument, type SourceDocument} from './src/document'
 import {contentSha256, readApprovedDraft, readValidatedDraft, saveApproval} from './scripts/approval'
+import {SUGGESTION_MAX_CHARS, suggestBlockText} from './scripts/suggest'
 import {execFile} from 'node:child_process'
 import {promisify} from 'node:util'
 
@@ -90,6 +91,16 @@ function worksApi(): Plugin {
                         await printPdf(name)
                         writeFileSync(printedPath, `${JSON.stringify({contentSha256: printedSha256}, null, 2)}\n`)
                         return send(res, 200, workStatus(source, draftPath, approvalPath, printedPath))
+                    }
+                    // Предложение не записывается: браузер сам применит его после выбора человека.
+                    if (action === 'suggest' && req.method === 'POST') {
+                        const body = JSON.parse(await readBody(req)) as {blockId?: unknown; text?: unknown}
+                        const document = readValidatedDraft(draftPath, source)
+                        const known = document.sections.some((section) => section.blocks.some((item) => item.id === body.blockId))
+                        if (!known || typeof body.text !== 'string' || body.text.trim() === '' || body.text.length > SUGGESTION_MAX_CHARS) {
+                            throw new Error('Блок для правки не найден или текст пуст')
+                        }
+                        return send(res, 200, {text: await suggestBlockText(body.text)})
                     }
                     if (action !== '') return send(res, 404, {error: 'Действие не найдено'})
 

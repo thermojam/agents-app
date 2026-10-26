@@ -246,6 +246,20 @@ button:hover {
     margin-top: 12px;
 }
 
+.suggestion {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px solid #c8cdd5;
+    background: #f6f7f9;
+}
+
+.suggestion-text {
+    margin: 0;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
 .save-row {
     display: flex;
     flex-wrap: wrap;

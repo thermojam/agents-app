@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import {
     EXAMPLE_FRAMES,
     PARAGRAPH_TONES,
@@ -16,8 +16,12 @@ import {
     loadWork,
     printWork,
     saveWork,
+    suggestBlockText,
     type WorkStatus,
 } from './works'
+
+// Предложение модели привязано к блоку и к тексту блока, с которым его запросили.
+type Suggestion = {blockId: string; baseText: string; text: string}
 
 const BLOCK_LABELS: Record<DocumentBlock['type'], string> = {
     heading: 'Заголовок',
@@ -120,6 +124,8 @@ export default function WorkPanel() {
     const [error, setError] = useState('')
     const [status, setStatus] = useState<WorkStatus | null>(null)
     const [busy, setBusy] = useState(false)
+    const [suggestion, setSuggestion] = useState<Suggestion | null>(null)
+    const requestSeq = useRef(0)
 
     useEffect(() => {
         fetchWorkNames().then(setNames).catch((reason) => setError(errorMessage(reason)))
@@ -135,6 +141,8 @@ export default function WorkPanel() {
         if (dirty && !window.confirm('Есть несохранённые правки. Открыть другую работу?')) return
         setError('')
         setMessage('')
+        requestSeq.current += 1
+        setSuggestion(null)
         try {
             const document = await loadWork(next)
             setName(next)
@@ -194,6 +202,36 @@ export default function WorkPanel() {
             })),
         })
         setMessage('')
+    }
+
+    // Ответ применяется только к тому тексту блока, с которым он запрошен; устаревший ответ не показывается.
+    async function suggest() {
+        if (!block) return
+        const request = ++requestSeq.current
+        const baseText = blockText(block)
+        setError('')
+        setBusy(true)
+        try {
+            const text = await suggestBlockText(name, block.id, baseText)
+            if (request === requestSeq.current) setSuggestion({blockId: block.id, baseText, text})
+        } catch (reason) {
+            if (request === requestSeq.current) setError(errorMessage(reason))
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    // Принятие меняет только выбранный блок в текущем черновике и только если его текст не менялся после запроса.
+    function acceptSuggestion() {
+        if (!suggestion || !block || !isCurrent(suggestion)) return
+        const {text} = suggestion
+        updateBlock((item) => withBlockText(item, text))
+        setSuggestion(null)
+        setMessage('Предложение принято. Сохраните работу, чтобы записать текст.')
+    }
+
+    function isCurrent(value: Suggestion): boolean {
+        return !!block && value.blockId === block.id && blockText(block) === value.baseText
     }
 
     async function save() {
@@ -293,6 +331,23 @@ export default function WorkPanel() {
                                     </select>
                                 </>
                             )}
+                            {suggestion && suggestion.blockId === block.id && (
+                                <div className="suggestion">
+                                    <p className="section-title">Предложение модели</p>
+                                    <p className="suggestion-text">{suggestion.text}</p>
+                                    {!isCurrent(suggestion) && (
+                                        <p className="work-error">Текст блока изменился после запроса: предложение устарело.</p>
+                                    )}
+                                    <div className="block-actions">
+                                        <button type="button" onClick={acceptSuggestion} disabled={!isCurrent(suggestion)}>
+                                            Принять
+                                        </button>
+                                        <button type="button" onClick={() => setSuggestion(null)}>
+                                            Отклонить
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                             <div className="block-actions">
                                 <button type="button" onClick={() => moveSelected(-1)} disabled={index <= 0}>
                                     Выше
@@ -312,6 +367,9 @@ export default function WorkPanel() {
                                 </button>
                                 <button type="button" onClick={undo} disabled={history.length === 0}>
                                     Отменить
+                                </button>
+                                <button type="button" onClick={suggest} disabled={busy}>
+                                    Предложить правку
                                 </button>
                             </div>
                             <div className="save-row">
